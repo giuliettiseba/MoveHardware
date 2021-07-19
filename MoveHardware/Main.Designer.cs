@@ -75,7 +75,7 @@ namespace MoveHardware
             this.groupBox1.Size = new System.Drawing.Size(177, 172);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "groupBox1";
+            this.groupBox1.Text = "S1";
             // 
             // toolStripStatusLabel_S1
             // 
@@ -166,7 +166,7 @@ namespace MoveHardware
             // 
             // treeView_S1
             // 
-            this.treeView_S1.Location = new System.Drawing.Point(195, 12);
+            this.treeView_S1.Location = new System.Drawing.Point(223, 12);
             this.treeView_S1.Name = "treeView_S1";
             this.treeView_S1.Size = new System.Drawing.Size(336, 489);
             this.treeView_S1.TabIndex = 1;
@@ -185,12 +185,12 @@ namespace MoveHardware
             this.groupBox2.Controls.Add(this.label8);
             this.groupBox2.Controls.Add(this.textBox_Address_S2);
             this.groupBox2.Controls.Add(this.label9);
-            this.groupBox2.Location = new System.Drawing.Point(558, 12);
+            this.groupBox2.Location = new System.Drawing.Point(579, 12);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(177, 172);
             this.groupBox2.TabIndex = 0;
             this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "groupBox1";
+            this.groupBox2.Text = "S2";
             // 
             // label_Status_S2
             // 
@@ -209,7 +209,7 @@ namespace MoveHardware
             this.button_connect_S2.TabIndex = 2;
             this.button_connect_S2.Text = "Connect";
             this.button_connect_S2.UseVisualStyleBackColor = true;
-            this.button_connect_S2.Click += new System.EventHandler(this.Button_Connect_S1_Click);
+            this.button_connect_S2.Click += new System.EventHandler(this.Button_Connect_S2_Click);
             // 
             // textBox_Password_S2
             // 
@@ -234,7 +234,7 @@ namespace MoveHardware
             this.textBox_Domain_S2.Name = "textBox_Domain_S2";
             this.textBox_Domain_S2.Size = new System.Drawing.Size(100, 20);
             this.textBox_Domain_S2.TabIndex = 1;
-            this.textBox_Domain_S2.Text = "MEX-LAB";
+            this.textBox_Domain_S2.Text = "WIN-M8NK7J8JKDK";
             // 
             // label7
             // 
@@ -251,7 +251,7 @@ namespace MoveHardware
             this.textBox_User_S2.Name = "textBox_User_S2";
             this.textBox_User_S2.Size = new System.Drawing.Size(100, 20);
             this.textBox_User_S2.TabIndex = 1;
-            this.textBox_User_S2.Text = "SGIU";
+            this.textBox_User_S2.Text = "Administrator";
             // 
             // label8
             // 
@@ -268,7 +268,7 @@ namespace MoveHardware
             this.textBox_Address_S2.Name = "textBox_Address_S2";
             this.textBox_Address_S2.Size = new System.Drawing.Size(100, 20);
             this.textBox_Address_S2.TabIndex = 1;
-            this.textBox_Address_S2.Text = "10.1.0.192";
+            this.textBox_Address_S2.Text = "172.28.64.255";
             // 
             // label9
             // 
@@ -285,18 +285,18 @@ namespace MoveHardware
             this.treeView_S2.Name = "treeView_S2";
             this.treeView_S2.Size = new System.Drawing.Size(336, 489);
             this.treeView_S2.TabIndex = 1;
-            this.treeView_S2.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView_S1_AfterSelect);
+            this.treeView_S2.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeView_S2_AfterSelect);
             this.treeView_S2.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.treeView_S1_NodeMouseClick);
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(533, 520);
+            this.button1.Location = new System.Drawing.Point(12, 507);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(235, 23);
+            this.button1.Size = new System.Drawing.Size(1086, 23);
             this.button1.TabIndex = 2;
             this.button1.Text = "Move Selection";
             this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.button1.Click += new System.EventHandler(this.button_Move_Selection_Click);
             // 
             // Main
             // 
