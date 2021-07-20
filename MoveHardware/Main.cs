@@ -7,10 +7,8 @@ using System.Windows.Forms;
 using VideoOS.Platform.SDK.Platform;
 using VideoOS.ConfigurationAPI;
 using System.Collections.ObjectModel;
-
-using System.IO;
-using System.Text.Json;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace MoveHardware
 {
@@ -18,519 +16,460 @@ namespace MoveHardware
     {
 
         /*
-         * Integration description
+         * Integration info
          */
         private static readonly Guid IntegrationId = new Guid("CD52BF80-A58B-4A35-BF30-159753159753");
         private const string IntegrationName = "MoveHardware";
         private const string Version = "1.0";
         private const string ManufacturerName = "SGIU";
 
-        /*
-         * API clients 
-         */
+        private ConfigApiClient _configApiClient1;          // Api client for src server
+        private ConfigApiClient _configApiClient2;          // Api client for dest server
 
-        private ConfigApiClient _configApiClient1;
-        private ConfigApiClient _configApiClient2;
-
+        private IList<ConfigurationItem> checkedNodes;      // List of checked Nodes
+        bool busy = false;                                  // Axiliary boolean to safe check treeView items 
+        
+        String tasksResultCache = "";                        // Until i find a way to safe call console write method 
 
         public Main()
         {
             InitializeComponent();
-            Button_Connect_S1_Click(null, null); // AUTOMATIC CLICK REMOVE ON PROD
-            Button_Connect_S2_Click(null, null); // AUTOMATIC CLICK REMOVE ON PROD
-           
-        }
 
-        internal static Collection<String> _showItemsType = new Collection<string>()
-                                                       {
-                                                           ItemTypes.System,
-                                                           ItemTypes.RecordingServer,
-                                                           ItemTypes.RecordingServerFolder,
-//                                                      ItemTypes.HardwareDriverFolder,
-//                                                      ItemTypes.HardwareDriver,
-	                                                       ItemTypes.Hardware,
-                                                           ItemTypes.HardwareFolder,
-	             /*                                          ItemTypes.CameraFolder,
-	                                                        ItemTypes.InputEventFolder,
-	                                                       ItemTypes.OutputFolder,
-	                                                       ItemTypes.MicrophoneFolder,
-	                                                       ItemTypes.SpeakerFolder,
-	                                                       ItemTypes.MetadataFolder,
-	                                                       ItemTypes.Camera,
-	                                                       ItemTypes.InputEvent,
-	                                                       ItemTypes.Output,
-	                                                       ItemTypes.Microphone,
-	                                                       ItemTypes.Speaker,
-	                                                       ItemTypes.Metadata,
-                                                           ItemTypes.CameraGroup,
-                                                           ItemTypes.CameraGroupFolder,
-                                                           ItemTypes.MetadataGroup,
-                                                           ItemTypes.MetadataGroupFolder,
-                                                           ItemTypes.MicrophoneGroup,
-                                                           ItemTypes.MicrophoneGroupFolder,
-                                                           ItemTypes.SpeakerGroup,
-                                                           ItemTypes.SpeakerGroupFolder,
-                                                           ItemTypes.InputEventGroup,
-                                                           ItemTypes.InputEventGroupFolder,
-                                                           ItemTypes.OutputGroup,
-                                                           ItemTypes.OutputGroupFolder,
-                                                        ItemTypes.BasicUserFolder,
-														   ItemTypes.BasicUser,
-                                                           ItemTypes.Role,
-                                                           ItemTypes.RoleFolder,
-                                                           ItemTypes.StorageFolder,
-                                                           ItemTypes.Storage,
-                                                           ItemTypes.LayoutFolder,
-                                                           ItemTypes.LayoutGroup,
-                                                           ItemTypes.LayoutGroupFolder,
-                                                           ItemTypes.VideoWall,
-                                                           ItemTypes.VideoWallFolder,
-                                                           ItemTypes.Monitor,
-                                                           ItemTypes.MonitorFolder,
-                                                           ItemTypes.VideoWallPreset,
-                                                           ItemTypes.VideoWallPresetFolder,
-                                                           ItemTypes.MonitorPresetFolder,
-                                                           ItemTypes.UserDefinedEventFolder,
-                                                           ItemTypes.UserDefinedEvent,
-                                                           ItemTypes.AnalyticsEventFolder,
-                                                           ItemTypes.AnalyticsEvent,
-                                                           ItemTypes.GenericEventFolder,
-                                                           ItemTypes.GenericEventDataSourceFolder,
-                                                           ItemTypes.GisMapLocation,
-                                                           ItemTypes.GisMapLocationFolder,
-                                                           ItemTypes.TimeProfile,
-                                                           ItemTypes.TimeProfileFolder,
-                                                           ItemTypes.MIPKind,
-                                                           ItemTypes.MIPKindFolder,
-                                                           ItemTypes.MIPItem,
-                                                           ItemTypes.MIPItemFolder,
-                                                           ItemTypes.AlarmDefinition,
-                                                           ItemTypes.AlarmDefinitionFolder,
-                                                           ItemTypes.LprMatchList,
-                                                           ItemTypes.LprMatchListFolder,
-                                                           ItemTypes.SaveSearches,
-                                                           ItemTypes.FindSaveSearches,
-                                                           ItemTypes.SaveSearchesFolder,
-                                                           ItemTypes.Rule,
-                                                           ItemTypes.RuleFolder,
-                                                           ItemTypes.AccessControlSystem,
-                                                           ItemTypes.AccessControlSystemFolder,
-                                                           ItemTypes.AccessControlUnit,
-                                                           ItemTypes.AccessControlUnitFolder,
-                                                           ItemTypes.Site,
-                                                           ItemTypes.SiteFolder,
-                                                           ItemTypes.LicenseInformationFolder,
-                                                           ItemTypes.LicenseInstalledProductFolder,
-                                                           ItemTypes.LicenseOverviewAllFolder,
-                                                           ItemTypes.LicenseDetailFolder,
-                                                           ItemTypes.LicenseInformation,
-                                                           ItemTypes.LicenseInstalledProduct,
-                                                           ItemTypes.LicenseOverviewAll,
-                                                           ItemTypes.LicenseDetail,
-                                                           ItemTypes.BasicOwnerInformationFolder,
-                                                           ItemTypes.BasicOwnerInformation,
-       */                                                    
-        };
-
-
-        private void Login(Uri uri, NetworkCredential nc)
-        {
             VideoOS.Platform.SDK.Environment.Initialize();
 
-            VideoOS.Platform.SDK.Environment.AddServer(uri, nc);
+            _configApiClient1 = new ConfigApiClient();
+            _configApiClient2 = new ConfigApiClient();
+
+            UI.Icons.Init();                                    // TreeView Decorator
+            treeView_S1.ImageList = UI.Icons.IconListBlack;
+            treeView_S2.ImageList = UI.Icons.IconListBlack;
+
+            Button_Connect_S1_Click(null, null); // AUTOMATIC CLICK - REMOVE ON PROD
+            Button_Connect_S2_Click(null, null); // AUTOMATIC CLICK - REMOVE ON PROD
+        }
+
+        /// <summary>
+        /// ViewTree Filter 
+        /// </summary>
+        internal static Collection<String> _showItemsType = new Collection<string>()
+                                                        {
+                                                           ItemTypes.System,
+                                                           ItemTypes.RecordingServerFolder,
+                                                           ItemTypes.RecordingServer,
+                                                           ItemTypes.HardwareFolder,
+                                                           ItemTypes.Hardware,
+                                                        };
+
+
+        /// <summary>
+        /// Login into the a Management Server (C-CODE)
+        /// </summary>
+        /// <param name="uri">Server URI</param>
+        /// <param name="nc">Credentials</param>
+        private void Login(Uri uri, NetworkCredential nc, ConfigApiClient _configApiClient, Label toolStripStatusLabel, Button button_Connect)
+        {
+            VideoOS.Platform.SDK.Environment.AddServer(uri, nc);                                                            // Add the server to the environment 
             try
             {
-                VideoOS.Platform.SDK.Environment.Login(uri, IntegrationId, IntegrationName, Version, ManufacturerName);
+                VideoOS.Platform.SDK.Environment.Login(uri, IntegrationId, IntegrationName, Version, ManufacturerName);     // attempt to login 
             }
             catch (ServerNotFoundMIPException snfe)
             {
-                MessageBox.Show(snfe.Message);
-
-                // Report  "Server not found: "
+                MessageBox.Show(snfe.Message);                                                                              // Report  "Server not found: "
             }
             catch (InvalidCredentialsMIPException ice)
             {
-                MessageBox.Show(ice.ToString());
-
-                // Report  "Invalid credentials" 
+                MessageBox.Show(ice.ToString());                                                                            // Report  "Invalid credentials" 
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.Message);
-                // Report  "Other error connecting to: " + uri.DnsSafeHost;
+                MessageBox.Show(e.Message);                                                                                 // Report  "Other error connecting to: " + uri.DnsSafeHost;
             }
 
-            _configApiClient1 = new ConfigApiClient();
-            string _serverAddress = uri.ToString();
-            int _serverPort = 80;
-            bool _corporate = true;
 
-            _configApiClient1.ServerAddress = _serverAddress;
-            _configApiClient1.Serverport = _serverPort;
-            _configApiClient1.ServerType = _corporate
+            string _serverAddress = uri.ToString();                           // server URI
+            int _serverPort = 80;                                             // Server port - TODO: Harcoded port 
+            bool _corporate = true;                                           // c-code - TODO: Harcoded type
+
+            _configApiClient.ServerAddress = _serverAddress;                  // set API Client
+            _configApiClient.Serverport = _serverPort;
+            _configApiClient.ServerType = _corporate
                                               ? ConfigApiClient.ServerTypeEnum.Corporate
                                               : ConfigApiClient.ServerTypeEnum.Arcus;
-            _configApiClient1.Initialize();
-            if (_configApiClient1.Connected)
-                toolStripStatusLabel_S1.Text = "Logged on";
-            else
-                toolStripStatusLabel_S1.Text = "Error logging on";
-            configAPI(_configApiClient1, treeView_S1);
-        }
+            _configApiClient.Initialize();                                    // Initialize API
 
-        private void configAPI(ConfigApiClient _configApiClient, TreeView treeView)
-        {
-            var server = _configApiClient.GetItem("/");
-            TreeNode serverTn = new TreeNode(server.DisplayName)
+            if (_configApiClient.Connected)
             {
-                Tag = server,
-                Checked = false,
-            };
-
-            treeView.Nodes.Add(serverTn);
-            serverTn.Nodes.AddRange(AddChildren("/", _configApiClient));
-        }
-
-
-        private TreeNode[] AddChildren(string node, ConfigApiClient _configApiClient)
-        {
-            List<TreeNode> children = new List<TreeNode>();
-            foreach (ConfigurationItem child in _configApiClient.GetChildItems(node))
-            {
-                if (_showItemsType.Contains(child.ItemType))
-                {
-                    //            Guid id = child.FQID.ObjectId != Guid.Empty ? child.FQID.ObjectId : child.FQID.ServerId.Id;
-
-                    TreeNode tn = new TreeNode(child.DisplayName)
-                    {
-                        Tag = child,
-                        Checked = false,
-                           ImageIndex = UI.Icons.GetImageIndex(child.ItemType),
-                           SelectedImageIndex = UI.Icons.GetImageIndex(child.ItemType)
-                    };
-                    //if (child.FQID.Kind != Kind.Folder && child.FQID.ObjectId != child.FQID.Kind)
-                    //{
-                    //    if (_treeNodeCache.ContainsKey(id) == false)
-                    //        _treeNodeCache.Add(id, tn);
-                    // }
-                    children.Add(tn);
-                    Console.WriteLine(child.Path);
-                    tn.Nodes.AddRange(AddChildren(child.Path, _configApiClient));
-
-                }
+                toolStripStatusLabel.Text = "Logged on";                    // If connected change status label 
+                button_Connect.Text = "Disconnect";
             }
-            return children.ToArray();
+            else
+                toolStripStatusLabel.Text = "Error logging on";             // If not connected change status label 
 
         }
 
 
-
-
+        /// <summary>
+        /// Push Connect Source Server Button Action 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Button_Connect_S1_Click(object sender, EventArgs e)
         {
-
-
-            // TODO: basic user 
-
-            //Uri uri = new Uri("http://10.3.32.18"1);
-            Uri uri = new Uri("http://" + textBox_S1.Text);
-
-            // This will reuse the Windows credentials you are logged in with
-            //  NetworkCredential nc = System.Net.CredentialCache.DefaultNetworkCredentials;
-
-
-            // You need this to apply "basic" credentials.
-            // Below, do AddServer(uri, cc) instead of AddServer(uri, nc)
-            //           CredentialCache cc = VideoOS.Platform.Login.Util.BuildCredentialCache(uri, "Test", "Milestone1$", "Basic");
-
-            // Alternatively, the BuildCredentialCache can also build credential for Windows login
-            // CredentialCache cc = VideoOS.Platform.Login.Util.BuildCredentialCache(uri, "MEX-LAB\\SGIU", "Milestone1$", "Negotiate"); 
-
-
-            String user = textBox_User_S1.Text;
-            String pass = textBox_Password_S1.Text;
-            String domain = textBox_Domain__S1.Text;
-            // This will use specific Windows credentials
-            NetworkCredential nc = new NetworkCredential(user, pass, domain);
-
-            Login(uri, nc);
-
-        }
-
-        private void treeView_S1_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
-        {
-            if (e.Button == MouseButtons.Right)
+            if (_configApiClient1.Connected)                                                                    // If connected Disconect 
             {
-                treeView_S1.SelectedNode = e.Node;
+                VideoOS.Platform.SDK.Environment.RemoveServer(new Uri(_configApiClient1.ServerAddress));        // Remove server
+                _configApiClient2.Close();                                                                      // Close API (REVIEW THIS) 
+                Button_Connect_S1.Text = "Connect";                                                             // Change button text 
+            }
+            else
+            {
+                Uri uri = new Uri("http://" + textBox_S1.Text);                                                 // Fetch URI
+                String user = textBox_User_S1.Text;                                                             // Fetch user 
+                String pass = textBox_Password_S1.Text;                                                         // Fetch pass 
+                String domain = textBox_Domain__S1.Text;                                                        // Fetch domain 
+                NetworkCredential nc = new NetworkCredential(user, pass, domain);                               // Build credentials
+
+                Login(uri, nc, _configApiClient1, toolStripStatusLabel_S1, Button_Connect_S1);                  // Call Login method
+                PopulateTreeView(_configApiClient1, treeView_S1);                                               // Show items 
             }
         }
 
-        private void DoAfterSelect(TreeNode node)
+        /// <summary>
+        /// Push Connect Destiny Server Button Action 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Button_Connect_S2_Click(object sender, EventArgs e)
         {
-            ConfigurationItem item = node.Tag as ConfigurationItem;
-
-            getCameraProperties(item, _configApiClient1);
-
-
-        }
-
-        private void DoAfterSelect_S2(TreeNode node)
-        {
-            ConfigurationItem item = node.Tag as ConfigurationItem;
-
-            getCameraProperties(item, _configApiClient2);
-
-
-        }
-
-        private void treeView_S1_AfterSelect(object sender, TreeViewEventArgs e)
-        {
-            Cursor.Current = Cursors.WaitCursor;
-            DoAfterSelect(e.Node);
-            Cursor.Current = Cursors.Default;
-        }
-
-
-
-        private CameraProperties getCameraProperties(ConfigurationItem _item, ConfigApiClient _configApiClient)
-        {
-
-            if (_item.ItemType == "Hardware")
+            if (_configApiClient2.Connected)                                                                    // If connected Disconect 
             {
-
-                /* Compare with PS-TOOL
-                string json = JsonSerializer.Serialize(_item);
-                File.WriteAllText(@"C:\temp\test.json", json);
-                Seems to have the same information. empty variables are ignored in SDK version 
-                 */
-
-                Console.WriteLine(_item.ItemType);
-
-                // Get Properties 
-                string id = (from item in _item.Properties where item.Key == "Id" select item.Value).First();
-                Console.WriteLine(id);
-
-                string name = (from item in _item.Properties where item.Key == "Name" select item.Value).First();
-                Console.WriteLine(name);
-
-                string description = (from item in _item.Properties where item.Key == "Description" select item.Value).First();
-                Console.WriteLine(description);
-
-                string address = (from item in _item.Properties where item.Key == "Address" select item.Value).First();
-                Console.WriteLine(address);
-
-                string userName = (from item in _item.Properties where item.Key == "UserName" select item.Value).First();
-                Console.WriteLine(userName);
-
-                string model = (from item in _item.Properties where item.Key == "Model" select item.Value).First();
-                Console.WriteLine(model);
-
-                string hardwareDriverPath = (from item in _item.Properties where item.Key == "HardwareDriverPath" select item.Value).First();
-                Console.WriteLine(hardwareDriverPath);
-
-                // Get Password 
-                ConfigurationItem result = _configApiClient.InvokeMethod(_item, "ReadPasswordHardware");
-                ConfigurationItem password_result = _configApiClient.InvokeMethod(result, result.MethodIds[0]);
-                string password = (from item in password_result.Properties where item.Key == "Password" select item.Value).First();
-                Console.WriteLine(password);
-
-                // Get Recording Server 
-                var recordingServer = _configApiClient.GetItem(_item.ParentPath.Split('/')[0]);
-                string recordingServerId = (from item in recordingServer.Properties where item.Key == "Id" select item.Value).First();
-                Console.WriteLine(recordingServerId);
-
-                // Get Hardware Driver 
-                ConfigurationItem[] hardwareDriverFolder = _configApiClient.GetChildItems(_item.ParentPath.Split('/')[0] + "/HardwareDriverFolder");
-                var hardwareProp = (from item in hardwareDriverFolder where item.Path == hardwareDriverPath select item.Properties).First();
-                string hardwareDriverId = (from item in hardwareProp where item.Key == "Number" select item.Value).First();
-                Console.WriteLine(hardwareDriverId);
-
-                CameraProperties cameraProperties = new CameraProperties() { Address = address, Name = name, Password = password, UserName = userName, DriverNumber = hardwareDriverId };
-                return cameraProperties;
+                VideoOS.Platform.SDK.Environment.RemoveServer(new Uri(_configApiClient2.ServerAddress));        // Remove server
+                _configApiClient2.Close();                                                                      // Close API (REVIEW THIS) 
+                Button_Connect_S2.Text = "Connect";                                                             // Change button text 
             }
-            return null;
-
-        }
-
-
-
-        private void fillAllChilds(ConfigurationItem item, ConfigApiClient _configApiClient)
-        {
-            FillChildren(item, _configApiClient);
-            foreach (var child in item.Children)
+            else
             {
-                fillAllChilds(child, _configApiClient);
+                Uri uri = new Uri("http://" + textBox_Address_S2.Text);                                         // Fetch URI
+                String user = textBox_User_S2.Text;                                                             // Fetch user 
+                String pass = textBox_Password_S2.Text;                                                         // Fetch pass 
+                String domain = textBox_Domain_S2.Text;                                                         // Fetch domain 
+                NetworkCredential nc = new NetworkCredential(user, pass, domain);                               // Build credentials
+
+                Login(uri, nc, _configApiClient2, toolStripStatusLabel_S2, Button_Connect_S2);                  // Call Login method
+                PopulateTreeView(_configApiClient2, treeView_S2);                                               // Show items 
             }
         }
 
-
-        private void FillChildren(ConfigurationItem item, ConfigApiClient _configApiClient)
+        /// <summary>
+        /// Populate the TreeView using the API client 
+        /// </summary>
+        /// <param name="_configApiClient"></param>
+        /// <param name="treeView"></param>
+        private void PopulateTreeView(ConfigApiClient _configApiClient, TreeView treeView)
         {
-            if (!item.ChildrenFilled)
+            var server = _configApiClient.GetItem("/");                                             // Start from the root
+            TreeNode serverTn = new TreeNode(server.DisplayName)                                    // Create a new node 
             {
-                item.Children = _configApiClient.GetChildItems(item.Path);
-                item.ChildrenFilled = true;
-            }
-            if (item.Children == null)
-                item.Children = new ConfigurationItem[0];
+                Tag = server,               // Store the ConfurationItem in the tag 
+                Checked = false             // Is not checked 
+            };
+            treeView.Nodes.Add(serverTn);                                                           // Add the root node 
+            serverTn.Nodes.AddRange(AddChildren("/", _configApiClient));                            // Add root children
         }
 
-        private void button_Move_Selection_Click(object sender, EventArgs e)
+        /// <summary>
+        /// Auxiliary Method to Populate Tree View 
+        /// </summary>
+        /// <param name="node">Parent node</param>
+        /// <param name="_configApiClient">Milestone API</param>
+        /// <returns></returns>
+        private TreeNode[] AddChildren(string node, ConfigApiClient _configApiClient)
+        {
+            List<TreeNode> children = new List<TreeNode>();                                         //  Create an empty list of TreeNode 
+
+            foreach (ConfigurationItem child in _configApiClient.GetChildItems(node))               //  For each clild of the parent node 
+            {
+                if (_showItemsType.Contains(child.ItemType))                                        //  Apply Filter 
+                {
+                    TreeNode tn = new TreeNode(child.DisplayName)                                   //  Create a TreeNode 
+                    {
+                        Tag = child,                                                    // Store the ConfigurationItem in the tag
+                        Checked = false,                                                // Is not checked 
+                        ImageIndex = UI.Icons.GetImageIndex(child.ItemType),            // Icon
+                        SelectedImageIndex = UI.Icons.GetImageIndex(child.ItemType)     // Selected Icon 
+                    };
+                    children.Add(tn);                                                               //  Add node to childen list 
+                    tn.Nodes.AddRange(AddChildren(child.Path, _configApiClient));                   //  Recursive call with the child as parent 
+                }
+            }
+
+            return children.ToArray();                                                              // Return the children list
+        }
+
+
+
+        /// <summary>
+        /// Get the needed information to add a camera to a the server 
+        /// Information to gather: Name, Address, UserName, HardwareDriverId, Password 
+        /// </summary>
+        /// <param name="_item">ConfigurationItem</param>
+        /// <param name="_configApiClient">Milestone API</param>
+        /// <returns></returns>
+        private CameraProperties GetCameraProperties(ConfigurationItem _item, ConfigApiClient _configApiClient)
         {
 
-            /// PLEASE PLEASE PLEASE REFACTOR THIS, 
+            // Get Properties 
+            string name = (from item in _item.Properties where item.Key == "Name" select item.Value).First();                                   // Find the hardware name 
+            string address = (from item in _item.Properties where item.Key == "Address" select item.Value).First();                             // Find the hardware IP address
+            string userName = (from item in _item.Properties where item.Key == "UserName" select item.Value).First();                           // Find the hardware Username  
+            string hardwareDriverPath = (from item in _item.Properties where item.Key == "HardwareDriverPath" select item.Value).First();       // Find the hardware HardwareDriverPath
 
-            ConfigurationItem _item = treeView_S1.SelectedNode.Tag as ConfigurationItem;
-            CameraProperties cameraProperties = getCameraProperties(_item, _configApiClient1);
-
-            ConfigurationItem _recordingServer = treeView_S2.SelectedNode.Tag as ConfigurationItem;
+            // Get Password 
+            ConfigurationItem result = _configApiClient.InvokeMethod(_item, "ReadPasswordHardware");                                            // Invoke API method to recover password
+            ConfigurationItem password_result = _configApiClient.InvokeMethod(result, result.MethodIds[0]);                                     // Execute API method to recover password
+            string password = (from item in password_result.Properties where item.Key == "Password" select item.Value).First();                 // Get password 
 
             // Get Hardware Driver 
-            ConfigurationItem[] hardwareDriverFolder = _configApiClient2.GetChildItems(_recordingServer.Path + "/HardwareDriverFolder");
+            ConfigurationItem[] hardwareDriverFolder = _configApiClient.GetChildItems(_item.ParentPath.Split('/')[0] + "/HardwareDriverFolder");// Fetch DriversFolder 
+            var hardwareProp = (from item in hardwareDriverFolder where item.Path == hardwareDriverPath select item.Properties).First();        // Find Driver
+            string hardwareDriverId = (from item in hardwareProp where item.Key == "Number" select item.Value).First();                         // Get Driver ID 
 
-            var hardwarePath = (from item in hardwareDriverFolder where item.Properties[3].Value == cameraProperties.DriverNumber select item.Path).First();
+            CameraProperties cameraProperties = new CameraProperties()
+            {                                                                                                                                   // Build the camera Properties Object 
+                Address = address,
+                Name = name,
+                Password = password,
+                UserName = userName,
+                DriverNumber = hardwareDriverId
+            };
 
-            ConfigurationItem addHarwareInfo = _configApiClient2.InvokeMethod(_recordingServer, "AddHardware");
-
-
-
-
-            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "HardwareAddress").Value = cameraProperties.Address;
-            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "UserName").Value = cameraProperties.UserName;
-            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "Password").Value = cameraProperties.Password;
-            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "HardwareDriverPath").Value = hardwarePath;
-
-            /*   foreach (Property property in addHarwareInfo.Properties)
-               {
-                   switch (property.Key)// TODO: Improve this ????
-                   {
-                       case "HardwareAddress": property.Value = cameraProperties.Address; break;
-                       case "UserName": property.Value = cameraProperties.UserName; break;
-                       case "Password": property.Value = cameraProperties.Password; break;
-                       case "HardwareDriverPath": property.Value = hardwarePath; break;
-                       default:
-                           break;
-                   }
-
-               }
-            */
-
-            ConfigurationItem addHarwareResult = _configApiClient2.InvokeMethod(addHarwareInfo, addHarwareInfo.MethodIds[0]);
-
-            String taskPath = addHarwareResult.Properties[6].Value; // TODO: Improve this  USING INDEX IS NOT GOOD
+            return cameraProperties;                                                                                                            // Return Camera Properties
+        }
 
 
-            var status = _configApiClient2.GetItem(taskPath);
-
-            while (status.Properties.Length < 3)
+        /// <summary>
+        /// Fill all the childs from a parent item 
+        /// </summary>
+        /// <param name="item">Parent ConfigurationItem</param>
+        /// <param name="_configApiClient">Milesotone API</param>
+        private void FillAllChilds(ConfigurationItem item, ConfigApiClient _configApiClient)
+        {
+            FillChildren(item, _configApiClient);                                                                   // Call aux method to get the children using the API
+            foreach (var child in item.Children)                                                                    // For each child
             {
-                status = _configApiClient2.GetItem(taskPath);
-                Console.WriteLine(status.Properties[0].Value); // TODO: Improve this  USING INDEX IS NOT GOOD
-                Thread.Sleep(300);
-
-
+                FillAllChilds(child, _configApiClient);                                                             // Recurcive call
             }
-            Console.WriteLine(status.Properties[2].Value); // TODO: Improve this  USING INDEX IS NOT GOOD --> Success message 
+        }
 
-            // No errors, we are on the track 
+        /// <summary>
+        /// Auxiliar methot to fill childs from a parent item 
+        /// </summary>
+        /// <param name="item">Parent ConfigurationItem</param>
+        /// <param name="_configApiClient">Milesotone API</param>
+        private void FillChildren(ConfigurationItem item, ConfigApiClient _configApiClient)
+        {
+            if (!item.ChildrenFilled)                                                                               //  If children was already filled continue 
+            {
+                item.Children = _configApiClient.GetChildItems(item.Path);                                          //  If not get the children with an API call
+                item.ChildrenFilled = true;                                                                         //  Filled flag 
+            }
+            if (item.Children == null)                                                                              //  If children is null
+                item.Children = new ConfigurationItem[0];                                                           //  Create a new object 
+        }
 
-            // We have the hardware on the new RS, no names or configs yet .
+        /// <summary>
+        /// Press Button Move Selected Hardware to a new RS
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Button_Move_Selection_Click(object sender, EventArgs e)
+        {
+            if (treeView_S2.SelectedNode != null)
+            {
+                ConfigurationItem _dest_recordingServer = treeView_S2.SelectedNode.Tag as ConfigurationItem;                // Get Dest RS 
+                if (_dest_recordingServer.ItemType == "RecordingServer")                                                    // Check the items 
+                {
+                    checkedNodes = new List<ConfigurationItem>();                                                           // Wipe checkedNodes
+                    GetCheckedNodes(treeView_S1.Nodes);                                                                     // Fill checkedNodes
 
-            /// If the hardware has been added, set the childs. 
+                    WriteInConsole("Moving " + checkedNodes.Count + "  Hardware to " + _dest_recordingServer.DisplayName);  // Show in the console the total number of hardware to be moved 
 
-            fillAllChilds(_item, _configApiClient1);  // Fill source childs 
+                    Cursor.Current = Cursors.WaitCursor;                            // Change cursor to wait 
+                    WriteInConsole("Start time: " + DateTime.Now.ToString());       // Show start time 
+                    DateTime startTime = DateTime.Now;                              // Save start time 
 
-            String justAddedHardware = status.Properties[1].Value;
-            ConfigurationItem destH = _configApiClient2.GetItem(justAddedHardware);
-            fillAllChilds(destH, _configApiClient2);  // Fill dest childs. 
+                    Parallel.ForEach(checkedNodes, new ParallelOptions { MaxDegreeOfParallelism = (int)numericUpDown_MaxDegreeOfParallelism.Value },  // Call in parallel the tasks to perform the migration
+                     _src =>
+                     {
+                         MoveHardwareToRecordingServer(_src, _dest_recordingServer);    // Move the src hardware to dest RS
+                 }
+                     );
 
-            MatchStreams(_item, destH); // Add stream if necesary 
+                    DateTime endTime = DateTime.Now;                                // Save the end time
+                    WriteInConsole(DateTime.Now.ToString());                        // Show end time
 
-            destH = _configApiClient2.GetItem(justAddedHardware);
-            fillAllChilds(destH, _configApiClient2);  // Fill dest childs. 
+                    WriteInConsole((endTime - startTime).ToString());               // Show engaged time
 
-            CopyConfigurationItem(_item, destH);
+                    WriteInConsole(tasksResultCache);                               // Show results 
+                    tasksResultCache = "";                                          // Wipe Cache
 
-            // _configApiClient2.SetItem(destH);
-            SetAllChilds(destH, _configApiClient2);
+                    Cursor.Current = Cursors.Default;                               // Restore cursor
+                }
+                else MessageBox.Show("Please select a Recording Server for destination");   // the detination server has not been selected 
+            }
+        }
 
+
+
+        /// <summary>
+        /// Get all the the hardware from the checked nodes 
+        /// </summary>
+        /// <param name="nodes"></param>
+        private void GetCheckedNodes(TreeNodeCollection nodes)
+        {
+            foreach (TreeNode node in nodes)                                            // For each node
+            {
+                if (node.Checked)                                                       // Is the node is checked 
+                {
+                    ConfigurationItem _confItem = node.Tag as ConfigurationItem;        // Get the ConfigurationItem from the node 
+                    if (_confItem.ItemType == "Hardware")                               // Is the ConfigurationItem is Hardware 
+                    {
+                        checkedNodes.Add(_confItem);                                    // Add the Item to a the checknodes list 
+                    }
+                }
+                if (node.Nodes.Count != 0)                                              // If node has childs 
+                    GetCheckedNodes(node.Nodes);                                        // Recursive call
+            }
+        }
+
+
+
+        /// <summary>
+        /// Given a Hardware and a Recording Server. Add the hardware to the new server an copy all the settings. 
+        /// </summary>
+        /// <param name="_src"></param>
+        /// <param name="_dest_recordingServer"></param>
+        private void MoveHardwareToRecordingServer(ConfigurationItem _src, ConfigurationItem _dest_recordingServer)
+        {
+            CameraProperties cameraProperties = GetCameraProperties(_src, _configApiClient1);                                   // Get src hardware basic properties 
+
+            ConfigurationItem[] hardwareDriverFolder = _configApiClient2.GetChildItems(_dest_recordingServer.Path + "/HardwareDriverFolder");                   // Get dest RS drivers
+            var hardwarePath = (from item in hardwareDriverFolder where item.Properties[3].Value == cameraProperties.DriverNumber select item.Path).First();    // Find the driver on the dest server 
+
+            ConfigurationItem addHarwareInfo = _configApiClient2.InvokeMethod(_dest_recordingServer, "AddHardware");            // Invoke Addhardware method on dest server 
+
+            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "HardwareAddress").Value = cameraProperties.Address;        // set harware address
+            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "UserName").Value = cameraProperties.UserName;              // set user 
+            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "Password").Value = cameraProperties.Password;              // set password
+            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "HardwareDriverPath").Value = hardwarePath;                 // set driver 
+
+            ConfigurationItem addHarwareResult = _configApiClient2.InvokeMethod(addHarwareInfo, addHarwareInfo.MethodIds[0]);   // Star Addharware method 
+
+            String taskPath = addHarwareResult.Properties[6].Value; // TODO: Improve this USING INDEX IS NOT GOOD
+
+            var status = _configApiClient2.GetItem(taskPath);       // Get the task status 
+
+            while (status.Properties.Length < 3)                    // TODO: check error or success?
+            {
+                status = _configApiClient2.GetItem(taskPath);       // Get the task status 
+                Thread.Sleep(300);   // <- Wait to success or error 
+            }
+
+            Console.WriteLine("Camera: " + cameraProperties.Name + " - IP: " + cameraProperties.Address + " - " + status.Properties[2].Value);          // TODO: Improve this  USING INDEX IS NOT GOOD --> Success message 
+            //  WriteInConsole("Camera: " + cameraProperties.Name + " - IP: " + cameraProperties.Address + " - " + status.Properties[2].Value );
+
+            tasksResultCache += "Camera: " + cameraProperties.Name + " - IP: " + cameraProperties.Address + " - " + status.Properties[2].Value + Environment.NewLine;
+
+            if (status.Properties[2].Value == "Success")                                            // If the hardware was successfuly added, set configurations
+            {
+
+                FillAllChilds(_src, _configApiClient1);                                             // Fill all source childs 
+
+                ConfigurationItem _dest = _configApiClient2.GetItem(status.Properties[1].Value);    // Get the added Hardware
+
+                MatchStreams(_src, _dest);                                                          // Add streams if necesary 
+
+                FillAllChilds(_dest, _configApiClient2);                                            // Fill dest childs. 
+
+                CopyConfigurationItem(_src, _dest);                                                 // Copy configuration from src to dest
+
+                SetAllChilds(_dest, _configApiClient2);                                             // Save the configuration to dest server
+
+                tasksResultCache += "Camera: " + cameraProperties.Name + " - IP: " + cameraProperties.Address + " - Configuration copied" + Environment.NewLine;
+
+                Console.WriteLine("Camera: " + cameraProperties.Name + " - IP: " + cameraProperties.Address + " - Configuration copied");
+                //       WriteInConsole("Camera: " + cameraProperties.Name + " - IP: " + cameraProperties.Address + " - Configuration copied");
+            }
 
         }
 
+        /// <summary>
+        ///  Match the number of camera streams
+        ///  manually transverse dest the childs 
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dest"></param>
         private void MatchStreams(ConfigurationItem src, ConfigurationItem dest)
         {
-            ConfigurationItem _cameras_S1 = Array.Find(src.Children, ele => ele.ItemType == "CameraFolder");
-            ConfigurationItem _cameras_S2 = Array.Find(dest.Children, ele => ele.ItemType == "CameraFolder");
 
-            for (int i = 0; i < _cameras_S1.Children.Length; i++)
-            {
-                ConfigurationItem _camera_S1 = _cameras_S1.Children[i];
-                ConfigurationItem _streamsFolder_S1 = Array.Find(_camera_S1.Children, ele => ele.ItemType == "StreamFolder");
-                ConfigurationItem _streams_S1 = Array.Find(_streamsFolder_S1.Children, ele => ele.ItemType == "Stream");
+            FillChildren(dest, _configApiClient2);                                                                                  // Fill dest hardware children 
+            ConfigurationItem _cameras_S1 = Array.Find(src.Children, ele => ele.ItemType == "CameraFolder");                        // Get src cameraFolder 
+            ConfigurationItem _cameras_S2 = Array.Find(dest.Children, ele => ele.ItemType == "CameraFolder");                       // Get dest cameraFolder 
+            FillChildren(_cameras_S2, _configApiClient2);                                                                           // Fill dest Cameras 
 
-                ConfigurationItem _camera_S2 = _cameras_S2.Children[i];
-                ConfigurationItem _streamsFolder_S2 = Array.Find(_camera_S2.Children, ele => ele.ItemType == "StreamFolder");
-                ConfigurationItem _streams_S2 = Array.Find(_streamsFolder_S2.Children, ele => ele.ItemType == "Stream");
+            for (int i = 0; i < _cameras_S1.Children.Length; i++)                                                                   // For each camera 
+            {   
+                ConfigurationItem _camera_S1 = _cameras_S1.Children[i];                                                             // Get selected camera children 
+                ConfigurationItem _streamsFolder_S1 = Array.Find(_camera_S1.Children, ele => ele.ItemType == "StreamFolder");       // Get camera StreamFolder
+                ConfigurationItem _streams_S1 = Array.Find(_streamsFolder_S1.Children, ele => ele.ItemType == "Stream");            // Get Streams
 
-                if (_streams_S1.Children.Length > 1)
+                if (_streams_S1.Children.Length > 1)                                                                                // If the camera has more than 1 stream 
                 {
-                    for (int j = 1; j < _streams_S1.Children.Length; j++)
+                    ConfigurationItem _camera_S2 = _cameras_S2.Children[i];                                                         // Get the selected stream 
+                    FillChildren(_camera_S2, _configApiClient2);                                                                    // Fill dest camera children 
+                    ConfigurationItem _streamsFolder_S2 = Array.Find(_camera_S2.Children, ele => ele.ItemType == "StreamFolder");   // Get dest dest StreamFolder 
+                    _streamsFolder_S2.Children = _configApiClient2.GetChildItems(_streamsFolder_S2.Path);                           // Fill dest camera streams children 
+                    ConfigurationItem _streams_S2 = Array.Find(_streamsFolder_S2.Children, ele => ele.ItemType == "Stream");        // Get the selected stream 
+                    _streams_S2.Children = _configApiClient2.GetChildItems(_streams_S2.Path);                                       // Fill dest camera stream config 
+                    for (int j = 1; j < _streams_S1.Children.Length; j++)                                                           // For each stream, starting from the second 
                     {
-                        AddStream(_streams_S2);
-
+                        ConfigurationItem addStreamInfo = _configApiClient2.InvokeMethod(_streams_S2, "AddStream");                     // Invoke AddStream Method
+                        ConfigurationItem addStreamResult = _configApiClient2.InvokeMethod(addStreamInfo, addStreamInfo.MethodIds[0]);  // Execute AddStream 
+                        String result = addStreamResult.Properties[0].Value; // TODO: Improve this  USING INDEX IS NOT GOOD             // Get Result
+                        Console.WriteLine(result);
                     }
-
                 }
-
             }
-
-
-        }
-
-        private void AddStream(ConfigurationItem streams_S2)
-        {
-            ConfigurationItem addStreamInfo = _configApiClient2.InvokeMethod(streams_S2, "AddStream");
-
-            ConfigurationItem addStreamResult = _configApiClient2.InvokeMethod(addStreamInfo, addStreamInfo.MethodIds[0]);
-
-            String taskPath = addStreamResult.Properties[0].Value; // TODO: Improve this  USING INDEX IS NOT GOOD
-            Console.WriteLine(taskPath);
-
         }
 
 
-
+        /// <summary>
+        /// Copy the properties from the src ConfigurationItem to the dest ConfigurationItem
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dest"></param>
         private void CopyConfigurationItem(ConfigurationItem src, ConfigurationItem dest)
         {
-
-            dest.DisplayName = src.DisplayName;
-
-            if (src.EnableProperty != null)
-                dest.EnableProperty.Enabled = src.EnableProperty.Enabled;
-
-            if (src.Properties != null)
+            dest.DisplayName = src.DisplayName;                                                 // Copy tha display name 
+            if (src.EnableProperty != null)                                                     // If Enable Property is not null
+                dest.EnableProperty.Enabled = src.EnableProperty.Enabled;                       // Copy the Enabled status
+            if (src.Properties != null)                                                         // If properties is not null 
             {
-                for (int i = 0; i < src.Properties.Length; i++)
+                for (int i = 0; i < src.Properties.Length; i++)                                 // Iterate over the property array 
                 {
-                    if (src.Properties[i].IsSettable)
+                    if (src.Properties[i].IsSettable)                                           // If the properties is settable
                     {
-                        dest.Properties[i].Value = src.Properties[i].Value;
-                        Console.WriteLine(src.Properties[i].DisplayName + ", " + src.Properties[i].Value + ", Added");
+                        dest.Properties[i].Value = src.Properties[i].Value;                     // Copy the value 
                     }
-                    else
-                    {
-                        Console.WriteLine(src.Properties[i].DisplayName + ", " + src.Properties[i].Value + ", Not Added");
-                    }
-
                 }
             }
 
-
-            if (src.Children != null)
+            if (src.Children != null)                                                           // Is the ConfigurationItem has children 
             {
-                for (int i = 0; i < src.Children.Length; i++)
+                for (int i = 0; i < src.Children.Length; i++)                                   // Iterate over the chils
                 {
-                    CopyConfigurationItem(src.Children[i], dest.Children[i]);
+                    CopyConfigurationItem(src.Children[i], dest.Children[i]);                   // Recursive call
                 }
             }
         }
@@ -538,109 +477,89 @@ namespace MoveHardware
 
 
 
+        /// <summary>
+        /// Save the ConfigurationItems to the server 
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="_configApiClient"></param>
         private void SetAllChilds(ConfigurationItem item, ConfigApiClient _configApiClient)
         {
 
             try
             {
 
-                if (!item.ItemType.Contains("Folder") && !(item.ItemType == "Stream" && !(item.ItemCategory == "Item")) && !(item.ItemType == "ClientSettings"))  // ignore Stream - !Items no settings there, 
-                                                                                                                                                                  // Anything with the word "Folder", just the structure
-                                                                                                                                                                  // Client Settings will have many paths and IDs, mean problems
+                if (!item.ItemType.Contains("Folder") &&                                    // Anything with the word "Folder" is just the tree structure, ignore 
+                    !(item.ItemType == "Stream" && !(item.ItemCategory == "Item")) &&       // ignore Stream - !Items no settings there, 
+                    !(item.ItemType == "ClientSettings"))                                   // Client Settings will have many paths and IDs, mean problems -> review if necesary 
                 {
-                    Console.WriteLine("Try to set -> Item Type: " + item.ItemType, ", Category: " + item.ItemCategory, ", Display Name: " + item.DisplayName);
-                    _configApiClient2.SetItem(item);
+                    _configApiClient2.SetItem(item);                                        // Call API to store values 
                 }
 
             }
             catch (Exception r)
             {
-
-                Console.WriteLine("Error setting item: " + item + "error: " + r);
+                Console.WriteLine("Error setting item: " + item + "error: " + r);           // Any error? 
             }
 
             foreach (var child in item.Children)
             {
-                SetAllChilds(child, _configApiClient);
+                SetAllChilds(child, _configApiClient);                                      // Recursive call 
             }
-
         }
 
-        //----
 
-
-        private void Button_Connect_S2_Click(object sender, EventArgs e)
+        /// <summary>
+        /// Check / uncheck childs if a parent was checked 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void treeView_S1_AfterCheck(object sender, TreeViewEventArgs e)
         {
-            Uri uri = new Uri("http://" + textBox_Address_S2.Text);
-            String user = textBox_User_S2.Text;
-            String pass = textBox_Password_S2.Text;
-            String domain = textBox_Domain_S2.Text;
-            NetworkCredential nc = new NetworkCredential(user, pass, domain);
-            VideoOS.Platform.SDK.Environment.AddServer(uri, nc);
-
+            if (busy) return;                           // If already iterating the tree, do nothing 
+            busy = true;                                // Start iterating 
             try
             {
-                VideoOS.Platform.SDK.Environment.Login(uri, IntegrationId, IntegrationName, Version, ManufacturerName);
+                checkNodes(e.Node, e.Node.Checked);     // Call aux method with parent 
             }
-            catch (ServerNotFoundMIPException snfe)
+            finally
             {
-                MessageBox.Show(snfe.Message);
-
-                // Report  "Server not found: "
+                busy = false;                           // iteration end 
             }
-            catch (InvalidCredentialsMIPException ice)
-            {
-                MessageBox.Show(ice.ToString());
-
-                // Report  "Invalid credentials" 
-            }
-            catch (Exception ed)
-            {
-                MessageBox.Show(ed.Message);
-                // Report  "Other error connecting to: " + uri.DnsSafeHost;
-            }
-
-
-            // no errors, good news 
-
-            _configApiClient2 = new ConfigApiClient();
-            string _serverAddress = uri.ToString();
-            int _serverPort = 80;
-            bool _corporate = true;
-
-            _configApiClient2.ServerAddress = _serverAddress;
-            _configApiClient2.Serverport = _serverPort;
-            _configApiClient2.ServerType = _corporate
-                                              ? ConfigApiClient.ServerTypeEnum.Corporate
-                                              : ConfigApiClient.ServerTypeEnum.Arcus;
-            _configApiClient2.Initialize();
-            if (_configApiClient2.Connected)
-                label_Status_S2.Text = "Logged on";
-            else
-                label_Status_S2.Text = "Error logging on";
-            configAPI(_configApiClient2, treeView_S2);
-
         }
 
-        // Refactor this duplicate code with treeview_s1 - LOW PRIORITY
-        private void treeView_S2_AfterSelect(object sender, TreeViewEventArgs e)
+        /// <summary>
+        /// Auxiliary method to check node childs
+        /// </summary>
+        /// <param name="node"></param>
+        /// <param name="check"></param>
+        private void checkNodes(TreeNode node, bool check)
         {
-            Cursor.Current = Cursors.WaitCursor;
-            DoAfterSelect_S2(e.Node);
-            Cursor.Current = Cursors.Default;
+            foreach (TreeNode child in node.Nodes)      // For child of the node node 
+            {
+                child.Checked = check;                  // set check 
+                checkNodes(child, check);               // recursive call to the childs 
+            }
         }
 
-    }
 
-    public static class InvokeInfoProperty
-    {
-        public const string Progress = "Progress";
-        public const string Path = "Path";
-        public const string ErrorCode = "ErrorCode";
-        public const string ErrorText = "ErrorText";
-        public const string State = "State";
+        /// <summary>
+        /// Auxiliar method to write in the console
+        /// </summary>
+        /// <param name="text"></param>
+        private void WriteInConsole(string text)
+        {
+         /*   if (InvokeRequired)
+            {
+                this.Invoke(new Action<string>(WriteInConsole), new object[] { text });
+                return;
+            }*/
+            textBox_Console.Text += text + Environment.NewLine;  
+        }
     }
-
+  
+    /// <summary>
+    /// Camera Properties class 
+    /// </summary>
     class CameraProperties
     {
         public string Name { get; set; }
