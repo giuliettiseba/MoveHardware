@@ -57,6 +57,10 @@ namespace MoveHardware
             this.textBox_Console = new System.Windows.Forms.TextBox();
             this.numericUpDown_MaxDegreeOfParallelism = new System.Windows.Forms.NumericUpDown();
             this.label5 = new System.Windows.Forms.Label();
+            this.button_MoveRoles = new System.Windows.Forms.Button();
+            this.button_MoveBasicUsers = new System.Windows.Forms.Button();
+            this.button2 = new System.Windows.Forms.Button();
+            this.button_MoveGroups = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown_MaxDegreeOfParallelism)).BeginInit();
@@ -176,7 +180,7 @@ namespace MoveHardware
             this.treeView_S1.Name = "treeView_S1";
             this.treeView_S1.Size = new System.Drawing.Size(336, 519);
             this.treeView_S1.TabIndex = 1;
-            this.treeView_S1.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.treeView_S1_AfterCheck);
+            this.treeView_S1.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.TreeView_S1_AfterCheck);
             // 
             // groupBox2
             // 
@@ -274,7 +278,7 @@ namespace MoveHardware
             this.textBox_Address_S2.Name = "textBox_Address_S2";
             this.textBox_Address_S2.Size = new System.Drawing.Size(108, 20);
             this.textBox_Address_S2.TabIndex = 1;
-            this.textBox_Address_S2.Text = "172.28.64.255";
+            this.textBox_Address_S2.Text = "172.24.242.242";
             // 
             // label9
             // 
@@ -332,11 +336,55 @@ namespace MoveHardware
             this.label5.TabIndex = 5;
             this.label5.Text = "Degree Of Parallelism";
             // 
+            // button_MoveRoles
+            // 
+            this.button_MoveRoles.Location = new System.Drawing.Point(884, 634);
+            this.button_MoveRoles.Name = "button_MoveRoles";
+            this.button_MoveRoles.Size = new System.Drawing.Size(195, 27);
+            this.button_MoveRoles.TabIndex = 6;
+            this.button_MoveRoles.Text = "Move Roles";
+            this.button_MoveRoles.UseVisualStyleBackColor = true;
+            this.button_MoveRoles.Click += new System.EventHandler(this.Button_MoveRoles_Click);
+            // 
+            // button_MoveBasicUsers
+            // 
+            this.button_MoveBasicUsers.Location = new System.Drawing.Point(887, 680);
+            this.button_MoveBasicUsers.Name = "button_MoveBasicUsers";
+            this.button_MoveBasicUsers.Size = new System.Drawing.Size(191, 36);
+            this.button_MoveBasicUsers.TabIndex = 7;
+            this.button_MoveBasicUsers.Text = "Move Basic Users";
+            this.button_MoveBasicUsers.UseVisualStyleBackColor = true;
+            this.button_MoveBasicUsers.Click += new System.EventHandler(this.button_MoveBasicUsers_Click);
+            // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(45, 240);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(123, 47);
+            this.button2.TabIndex = 8;
+            this.button2.Text = "button2";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
+            // button_MoveGroups
+            // 
+            this.button_MoveGroups.Location = new System.Drawing.Point(887, 734);
+            this.button_MoveGroups.Name = "button_MoveGroups";
+            this.button_MoveGroups.Size = new System.Drawing.Size(188, 33);
+            this.button_MoveGroups.TabIndex = 9;
+            this.button_MoveGroups.Text = "Move Groups";
+            this.button_MoveGroups.UseVisualStyleBackColor = true;
+            this.button_MoveGroups.Click += new System.EventHandler(this.button_MoveGroups_Click);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1111, 792);
+            this.Controls.Add(this.button_MoveGroups);
+            this.Controls.Add(this.button2);
+            this.Controls.Add(this.button_MoveBasicUsers);
+            this.Controls.Add(this.button_MoveRoles);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.numericUpDown_MaxDegreeOfParallelism);
             this.Controls.Add(this.textBox_Console);
@@ -387,6 +435,10 @@ namespace MoveHardware
         private System.Windows.Forms.TextBox textBox_Console;
         private System.Windows.Forms.NumericUpDown numericUpDown_MaxDegreeOfParallelism;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Button button_MoveRoles;
+        private System.Windows.Forms.Button button_MoveBasicUsers;
+        private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button button_MoveGroups;
     }
 }
 

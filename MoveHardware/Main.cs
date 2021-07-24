@@ -26,9 +26,8 @@ namespace MoveHardware
         private ConfigApiClient _configApiClient1;          // Api client for src server
         private ConfigApiClient _configApiClient2;          // Api client for dest server
 
-        private IList<ConfigurationItem> checkedNodes;      // List of checked Nodes
         bool busy = false;                                  // Axiliary boolean to safe check treeView items 
-        
+
         String tasksResultCache = "";                        // Until i find a way to safe call console write method 
 
         public Main()
@@ -48,17 +47,71 @@ namespace MoveHardware
             Button_Connect_S2_Click(null, null); // AUTOMATIC CLICK - REMOVE ON PROD
         }
 
+
+        
+        /// <summary>
+        /// Devices Folders Filter
+        /// </summary>
+        private static Collection<String> devicesFolders = new Collection<string>()
+                                                        {
+                                                            ItemTypes.CameraFolder,
+                                                            ItemTypes.MicrophoneFolder,
+                                                            ItemTypes.OutputFolder,
+                                                            ItemTypes.InputEventFolder,
+                                                            ItemTypes.MetadataFolder
+                                                        };
+
         /// <summary>
         /// ViewTree Filter 
         /// </summary>
-        internal static Collection<String> _showItemsType = new Collection<string>()
+        private static Collection<String> _showItemsType = new Collection<string>()
                                                         {
                                                            ItemTypes.System,
                                                            ItemTypes.RecordingServerFolder,
                                                            ItemTypes.RecordingServer,
                                                            ItemTypes.HardwareFolder,
                                                            ItemTypes.Hardware,
+
+                                                           ItemTypes.Role,
+                                                           ItemTypes.RoleFolder,
+
+
+                                                           ItemTypes.CameraGroup,
+                                                           ItemTypes.CameraGroupFolder,
+
+                                                           ItemTypes.MicrophoneGroup,
+                                                           ItemTypes.MicrophoneGroupFolder,
+
+                                                           ItemTypes.Camera,
+                                                           ItemTypes.CameraFolder,
+
+                                                           ItemTypes.SpeakerGroup,
+                                                           ItemTypes.SpeakerGroupFolder,
+
+                                                           ItemTypes.MetadataGroup,
+                                                           ItemTypes.MetadataGroupFolder,
+
+                                                           ItemTypes.InputEventGroup,
+                                                           ItemTypes.InputEventGroupFolder,
+
+                                                           ItemTypes.OutputGroup,
+                                                           ItemTypes.OutputGroupFolder,
+
+
+
+
+
+
+
+
+                                                           ItemTypes.UserFolder,
+                                                           ItemTypes.User,
+
+                                                           ItemTypes.BasicUserFolder,
+                                                           ItemTypes.BasicUser,
+
                                                         };
+        private object _permisions;
 
 
         /// <summary>
@@ -290,8 +343,7 @@ namespace MoveHardware
                 ConfigurationItem _dest_recordingServer = treeView_S2.SelectedNode.Tag as ConfigurationItem;                // Get Dest RS 
                 if (_dest_recordingServer.ItemType == "RecordingServer")                                                    // Check the items 
                 {
-                    checkedNodes = new List<ConfigurationItem>();                                                           // Wipe checkedNodes
-                    GetCheckedNodes(treeView_S1.Nodes);                                                                     // Fill checkedNodes
+                    IList<ConfigurationItem> checkedNodes = GetCheckedNodes(treeView_S1.Nodes, "Hardware");                                                                     // Fill checkedNodes
 
                     WriteInConsole("Moving " + checkedNodes.Count + "  Hardware to " + _dest_recordingServer.DisplayName);  // Show in the console the total number of hardware to be moved 
 
@@ -303,7 +355,7 @@ namespace MoveHardware
                      _src =>
                      {
                          MoveHardwareToRecordingServer(_src, _dest_recordingServer);    // Move the src hardware to dest RS
-                 }
+                     }
                      );
 
                     DateTime endTime = DateTime.Now;                                // Save the end time
@@ -322,25 +374,39 @@ namespace MoveHardware
 
 
 
+
+
         /// <summary>
-        /// Get all the the hardware from the checked nodes 
+        /// Get checked nodes aux methods 
         /// </summary>
         /// <param name="nodes"></param>
-        private void GetCheckedNodes(TreeNodeCollection nodes)
+        private void GetCheckedNodesAux(TreeNodeCollection nodes, String itemType, ref IList<ConfigurationItem> checkedNodes)
         {
             foreach (TreeNode node in nodes)                                            // For each node
             {
                 if (node.Checked)                                                       // Is the node is checked 
                 {
                     ConfigurationItem _confItem = node.Tag as ConfigurationItem;        // Get the ConfigurationItem from the node 
-                    if (_confItem.ItemType == "Hardware")                               // Is the ConfigurationItem is Hardware 
+                    if (_confItem.ItemType == itemType)                                 // Is the ConfigurationItem is Hardware 
                     {
                         checkedNodes.Add(_confItem);                                    // Add the Item to a the checknodes list 
                     }
                 }
                 if (node.Nodes.Count != 0)                                              // If node has childs 
-                    GetCheckedNodes(node.Nodes);                                        // Recursive call
+                    GetCheckedNodesAux(node.Nodes, itemType, ref checkedNodes);         // Recursive call
             }
+        }
+
+        /// <summary>
+        /// Get all the the  from the checked nodes 
+        /// </summary>
+        /// <param name="nodes"></param>
+        private IList<ConfigurationItem> GetCheckedNodes(TreeNodeCollection nodes, String itemType)
+        {
+
+            IList<ConfigurationItem> checkedNodes = checkedNodes = new List<ConfigurationItem>();
+            GetCheckedNodesAux(nodes, itemType, ref checkedNodes);
+            return checkedNodes;
         }
 
 
@@ -419,7 +485,7 @@ namespace MoveHardware
             FillChildren(_cameras_S2, _configApiClient2);                                                                           // Fill dest Cameras 
 
             for (int i = 0; i < _cameras_S1.Children.Length; i++)                                                                   // For each camera 
-            {   
+            {
                 ConfigurationItem _camera_S1 = _cameras_S1.Children[i];                                                             // Get selected camera children 
                 ConfigurationItem _streamsFolder_S1 = Array.Find(_camera_S1.Children, ele => ele.ItemType == "StreamFolder");       // Get camera StreamFolder
                 ConfigurationItem _streams_S1 = Array.Find(_streamsFolder_S1.Children, ele => ele.ItemType == "Stream");            // Get Streams
@@ -513,13 +579,13 @@ namespace MoveHardware
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void treeView_S1_AfterCheck(object sender, TreeViewEventArgs e)
+        private void TreeView_S1_AfterCheck(object sender, TreeViewEventArgs e)
         {
             if (busy) return;                           // If already iterating the tree, do nothing 
             busy = true;                                // Start iterating 
             try
             {
-                checkNodes(e.Node, e.Node.Checked);     // Call aux method with parent 
+                CheckNodes(e.Node, e.Node.Checked);     // Call aux method with parent node
             }
             finally
             {
@@ -532,12 +598,12 @@ namespace MoveHardware
         /// </summary>
         /// <param name="node"></param>
         /// <param name="check"></param>
-        private void checkNodes(TreeNode node, bool check)
+        private void CheckNodes(TreeNode node, bool check)
         {
-            foreach (TreeNode child in node.Nodes)      // For child of the node node 
+            foreach (TreeNode child in node.Nodes)      // For each child of the node 
             {
                 child.Checked = check;                  // set check 
-                checkNodes(child, check);               // recursive call to the childs 
+                CheckNodes(child, check);               // recursive call to the childs 
             }
         }
 
@@ -548,15 +614,450 @@ namespace MoveHardware
         /// <param name="text"></param>
         private void WriteInConsole(string text)
         {
-         /*   if (InvokeRequired)
-            {
-                this.Invoke(new Action<string>(WriteInConsole), new object[] { text });
-                return;
-            }*/
-            textBox_Console.Text += text + Environment.NewLine;  
+            textBox_Console.Text += text + Environment.NewLine;
         }
+
+
+        /// <summary>
+        /// Click on Move Roles Buttom 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Button_MoveRoles_Click(object sender, EventArgs e)
+        {
+
+            /// PLEASE PLEASE PLEASE REFACTOR THIS 
+
+            IList<ConfigurationItem> rolesNodes = GetCheckedNodes(treeView_S1.Nodes, "Role");
+
+            ConfigurationItem _dest_Server = treeView_S2.TopNode.Tag as ConfigurationItem;
+            FillChildren(_dest_Server, _configApiClient2);
+
+            ConfigurationItem _roleFolder = Array.Find(_dest_Server.Children, ele => ele.ItemType == "RoleFolder");
+            FillChildren(_roleFolder, _configApiClient2);
+
+            foreach (ConfigurationItem _role in rolesNodes)
+            {
+                FillAllChilds(_role, _configApiClient1);
+                try
+                {
+                    if (Array.Find(_role.Properties, ele => ele.Key == "RoleType").Value != "Adminstrative")
+                    {
+                        WriteInConsole("Adding Role");
+
+                        ConfigurationItem result = _configApiClient2.InvokeMethod(_roleFolder, "AddRole");
+
+                        Array.Find(result.Properties, ele => ele.Key == "Name").Value = Array.Find(_role.Properties, ele => ele.Key == "Name").Value;
+                        Array.Find(result.Properties, ele => ele.Key == "Description").Value = Array.Find(_role.Properties, ele => ele.Key == "Description").Value;
+                        Array.Find(result.Properties, ele => ele.Key == "DualAuthorizationRequired").Value = Array.Find(_role.Properties, ele => ele.Key == "DualAuthorizationRequired").Value;
+                        Array.Find(result.Properties, ele => ele.Key == "MakeUsersAnonymousDuringPTZSession").Value = Array.Find(_role.Properties, ele => ele.Key == "MakeUsersAnonymousDuringPTZSession").Value;
+                        Array.Find(result.Properties, ele => ele.Key == "AllowMobileClientLogOn").Value = Array.Find(_role.Properties, ele => ele.Key == "AllowMobileClientLogOn").Value;
+                        Array.Find(result.Properties, ele => ele.Key == "AllowSmartClientLogOn").Value = Array.Find(_role.Properties, ele => ele.Key == "AllowSmartClientLogOn").Value;
+                        Array.Find(result.Properties, ele => ele.Key == "AllowWebClientLogOn").Value = Array.Find(_role.Properties, ele => ele.Key == "AllowWebClientLogOn").Value;
+
+                        ConfigurationItem InvokeResult = _configApiClient2.InvokeMethod(result, "AddRole");
+                        WriteInConsole(Array.Find(InvokeResult.Properties, ele => ele.Key == "State").Value);
+
+                        WriteInConsole("Setting Role Permisions");
+
+                        ConfigurationItem _src_Server = treeView_S1.TopNode.Tag as ConfigurationItem;
+                        FillChildren(_src_Server, _configApiClient1);
+                        ConfigurationItem _recordingServerFolder = Array.Find(_src_Server.Children, ele => ele.ItemType == "RecordingServerFolder");
+                        FillChildren(_recordingServerFolder, _configApiClient1);
+                        foreach (ConfigurationItem _recodingServer in _recordingServerFolder.Children)
+                        {
+                            FillChildren(_recodingServer, _configApiClient1);
+                            ConfigurationItem _hardwareFolder = Array.Find(_recodingServer.Children, ele => ele.ItemType == "HardwareFolder");
+                            FillChildren(_hardwareFolder, _configApiClient1);
+                            foreach (ConfigurationItem _hardware in _hardwareFolder.Children)
+                            {
+                                FillChildren(_hardware, _configApiClient1);
+
+                                ConfigurationItem[] _devicesFolders = Array.FindAll(_hardware.Children, ele => devicesFolders.Contains(ele.ItemType));
+
+                                //ConfigurationItem _cameraFolder = Array.Find(_hardware.Children, ele => ele.ItemType == "CameraFolder");
+                                foreach (ConfigurationItem _deviceFolder in _devicesFolders)
+                                {
+                                    FillChildren(_deviceFolder, _configApiClient1);
+
+                                    foreach (ConfigurationItem _device in _deviceFolder.Children)
+                                    {
+                                        Property[] _permisions = GetRolePermissions(_role, _device);
+
+                                        ConfigurationItem _role_s2_ = Find_S1_Role_in_S2(_role);
+                                        ConfigurationItem _device_s2 = Find_S1_Device_in_S2(_device);
+                                        SetDevicePermisions(_role_s2_, _device_s2, _permisions);
+                                    }
+
+                                }
+                            }
+                        }
+
+                        WriteInConsole("Setting Overall permissions");
+
+
+                        ConfigurationItem _role_s2__ = Find_S1_Role_in_S2(_role);
+                        FillChildren(_role_s2__, _configApiClient2);
+
+                        ConfigurationItem _result_s1 = _configApiClient1.InvokeMethod(_role, "ChangeOverallSecurityPermissions");
+
+                        ConfigurationItem _result_s2 = _configApiClient2.InvokeMethod(_role_s2__, "ChangeOverallSecurityPermissions");
+
+                        foreach (ValueTypeInfo vti in _result_s1.Properties[0].ValueTypeInfos)
+                        {
+                            _result_s1.Properties[0].Value = vti.Value;
+                            _result_s2.Properties[0].Value = vti.Value;
+
+                            ConfigurationItem _result_2_s1 = _configApiClient1.InvokeMethod(_result_s1, "ChangeOverallSecurityPermissions");
+                            ConfigurationItem _result_2_s2 = _configApiClient2.InvokeMethod(_result_s2, "ChangeOverallSecurityPermissions");
+
+                            _result_2_s2.Properties = _result_2_s1.Properties;
+
+                            ConfigurationItem _result_3_s2 = _configApiClient2.InvokeMethod(_result_2_s2, "ChangeOverallSecurityPermissions");
+                        }
+                    }
+
+
+                    WriteInConsole("Add users to role");
+
+                    ConfigurationItem _userFolder = Array.Find(_role.Children, ele => ele.ItemType == "UserFolder");
+                    FillChildren(_userFolder, _configApiClient1);
+
+                    ConfigurationItem _role_s2 = Find_S1_Role_in_S2(_role);
+                    FillChildren(_role_s2, _configApiClient2);
+                    ConfigurationItem _userFolder_s2 = Array.Find(_role_s2.Children, ele => ele.ItemType == "UserFolder");
+
+                    foreach (ConfigurationItem _user in _userFolder.Children)
+                    {
+                        if (Array.Find(_user.Properties, ele => ele.Key == "IdentityType").Value == "BasicUser")
+                        {
+                            ConfigurationItem _user_s2 = Find_S1_User_in_S2(_user);
+                            ConfigurationItem result = _configApiClient2.InvokeMethod(_userFolder_s2, "AddRoleMember");
+                            Array.Find(result.Properties, ele => ele.Key == "Sid").Value = Array.Find(_user_s2.Properties, ele => ele.Key == "Id").Value;
+                            ConfigurationItem result2 = _configApiClient2.InvokeMethod(result, "AddRoleMember");
+                            WriteInConsole(Array.Find(result2.Properties, ele => ele.Key == "State").Value);
+
+                        }
+                        else
+                        {
+                            ConfigurationItem result = _configApiClient2.InvokeMethod(_userFolder_s2, "AddRoleMember");
+                            Array.Find(result.Properties, ele => ele.Key == "Sid").Value = Array.Find(_user.Properties, ele => ele.Key == "Sid").Value;
+                            ConfigurationItem result2 = _configApiClient2.InvokeMethod(result, "AddRoleMember");
+                            WriteInConsole(Array.Find(result2.Properties, ele => ele.Key == "State").Value);
+                        }
+                    }
+                }
+
+                catch (Exception ex)
+                {
+                    WriteInConsole(ex.Message);
+                }
+            }
+        }
+
+
+
+        private ConfigurationItem Find_S1_User_in_S2(ConfigurationItem user)
+        {
+            String _userType = Array.Find(user.Properties, ele => ele.Key == "IdentityType").Value;
+            String _userName = Array.Find(user.Properties, ele => ele.Key == "AccountName").Value;
+            String _domain = Array.Find(user.Properties, ele => ele.Key == "Domain").Value;
+
+            ConfigurationItem _user = FindBasicUser(_userName, _configApiClient2);
+
+            return _user;
+        }
+
+
+        private ConfigurationItem FindBasicUser(string userName, ConfigApiClient configApiClient2)
+        {
+            ConfigurationItem _server = treeView_S2.TopNode.Tag as ConfigurationItem;
+            ConfigurationItem _BasicUserFolder = Array.Find(_server.Children, ele => ele.ItemType == ItemTypes.BasicUserFolder);
+            _BasicUserFolder.ChildrenFilled = false;
+            FillChildren(_BasicUserFolder, _configApiClient2);
+
+            return Array.Find(_BasicUserFolder.Children, ele => ele.DisplayName == userName);
+
+        }
+
+        private ConfigurationItem Find_S1_Role_in_S2(ConfigurationItem role)
+        {
+            String _srcRoleName = Array.Find(role.Properties, ele => ele.Key == "Name").Value;
+
+            ConfigurationItem _role = FindRoleByName(_srcRoleName, _configApiClient2);
+
+            return _role;
+        }
+
+        private ConfigurationItem FindRoleByName(string srcRoleName, ConfigApiClient configApiClient)
+        {
+            ConfigurationItem _server = treeView_S2.TopNode.Tag as ConfigurationItem;
+            ConfigurationItem _roleFolder = Array.Find(_server.Children, ele => ele.ItemType == "RoleFolder");
+            _roleFolder.ChildrenFilled = false;
+            FillChildren(_roleFolder, configApiClient);
+
+            foreach (ConfigurationItem _role in _roleFolder.Children)
+            {
+                String _roleName = Array.Find(_role.Properties, ele => ele.Key == "Name").Value;
+
+                if (String.Equals(_roleName, srcRoleName))
+                {
+                    return _role;
+                }
+            }
+            return null;
+        }
+
+        private void SetDevicePermisions(ConfigurationItem role, ConfigurationItem device, Property[] permisions)
+        {
+            ConfigurationItem result = _configApiClient2.InvokeMethod(device, "ChangeSecurityPermissions");
+            Array.Find(result.Properties, ele => ele.Key == "UserPath").Value = role.Path;
+            ConfigurationItem InvokeResult = _configApiClient2.InvokeMethod(result, "ChangeSecurityPermissions");
+            permisions[0] = InvokeResult.Properties[0];
+            InvokeResult.Properties = permisions;
+            ConfigurationItem InvokeResult2 = _configApiClient2.InvokeMethod(InvokeResult, "ChangeSecurityPermissions");
+
+
+        }
+
+        private ConfigurationItem Find_S1_Device_in_S2(ConfigurationItem device)
+        {
+            ConfigurationItem hardware = GetDeviceHardware(device, _configApiClient1);
+            String _srcAddress = Array.Find(hardware.Properties, ele => ele.Key == "Address").Value;
+
+            String _srcName = Array.Find(device.Properties, ele => ele.Key == "Name").Value;
+
+            ConfigurationItem _device = FindDeviceByAddress(_srcAddress, _srcName, _configApiClient2);
+
+            return _device;
+
+        }
+
+
+
+        private ConfigurationItem FindDeviceByAddress(String srcAddress, String srcName, ConfigApiClient _configApiClient)
+        {
+            /// PLEASE PLEASE PLEASE REFACTOR THIS
+            /// 
+
+            ConfigurationItem _server = treeView_S2.TopNode.Tag as ConfigurationItem;
+            ConfigurationItem _recordingFolder = Array.Find(_server.Children, ele => ele.ItemType == "RecordingServerFolder");
+            FillChildren(_recordingFolder, _configApiClient);
+
+            foreach (ConfigurationItem _recordingServer in _recordingFolder.Children)
+            {
+                FillChildren(_recordingServer, _configApiClient);
+
+                ConfigurationItem _hardwareFolder = Array.Find(_recordingServer.Children, ele => ele.ItemType == "HardwareFolder");
+                FillChildren(_hardwareFolder, _configApiClient);
+                foreach (ConfigurationItem _hardware in _hardwareFolder.Children)
+                {
+                    FillChildren(_hardware, _configApiClient);
+
+                    String _hardwareAddress = Array.Find(_hardware.Properties, ele => ele.Key == "Address").Value;
+
+                    if (String.Equals(_hardwareAddress, srcAddress))
+                    {
+
+                        //ConfigurationItem _camerasFolder = Array.Find(_hardware.Children, ele => ele.ItemType == "CameraFolder");
+
+                        ConfigurationItem[] _devicesFolders = Array.FindAll(_hardware.Children, ele => devicesFolders.Contains(ele.ItemType));
+
+                        foreach (ConfigurationItem _devicesFolder in _devicesFolders)
+                        {
+
+
+                            FillChildren(_devicesFolder, _configApiClient);
+                            foreach (ConfigurationItem _device in _devicesFolder.Children)
+                            {
+                                FillChildren(_device, _configApiClient);
+
+                                string _cameraName = Array.Find(_device.Properties, ele => ele.Key == "Name").Value;
+
+                                if (String.Equals(_cameraName, srcName))
+                                {
+                                    return _device;
+                                }
+                            }
+                        }
+
+
+                    }
+                }
+            }
+            return null;
+        }
+
+
+
+        private ConfigurationItem GetDeviceHardware(ConfigurationItem device, ConfigApiClient _configApiClient)
+        {
+            ConfigurationItem _deviceFolder = _configApiClient.GetItem(device.ParentPath);
+            ConfigurationItem _hardware = _configApiClient.GetItem(_deviceFolder.ParentPath);
+            return _hardware;
+        }
+
+
+
+
+        private Property[] GetRolePermissions(ConfigurationItem role, ConfigurationItem camera)
+        {
+            ConfigurationItem result = _configApiClient1.InvokeMethod(camera, "ChangeSecurityPermissions");
+            Array.Find(result.Properties, ele => ele.Key == "UserPath").Value = role.Path;
+            ConfigurationItem InvokeResult = _configApiClient1.InvokeMethod(result, "ChangeSecurityPermissions");
+            return InvokeResult.Properties;
+        }
+
+
+
+
+
+        private void button_MoveBasicUsers_Click(object sender, EventArgs e)
+        {
+            /// PLEASE PLEASE PLEASE REFACTOR THIS 
+            /// 
+
+
+            IList<ConfigurationItem> _src_BasicUser = GetCheckedNodes(treeView_S1.Nodes, "BasicUser");
+
+            ConfigurationItem _dest_Server = treeView_S2.TopNode.Tag as ConfigurationItem;
+            FillChildren(_dest_Server, _configApiClient2);
+
+            ConfigurationItem _dest_BasicUserFolder = Array.Find(_dest_Server.Children, ele => ele.ItemType == "BasicUserFolder");
+            FillChildren(_dest_BasicUserFolder, _configApiClient2);
+
+            foreach (ConfigurationItem _basicUser in _src_BasicUser)
+            {
+                FillAllChilds(_basicUser, _configApiClient1);
+
+                ConfigurationItem result = _configApiClient2.InvokeMethod(_dest_BasicUserFolder, "AddBasicUser");
+
+                Array.Find(result.Properties, ele => ele.Key == "Name").Value = Array.Find(_basicUser.Properties, ele => ele.Key == "Name").Value;
+                Array.Find(result.Properties, ele => ele.Key == "Description").Value = Array.Find(_basicUser.Properties, ele => ele.Key == "Description").Value;
+
+                Array.Find(result.Properties, ele => ele.Key == "CanChangePassword").Value = Array.Find(_basicUser.Properties, ele => ele.Key == "CanChangePassword").Value;
+                Array.Find(result.Properties, ele => ele.Key == "ForcePasswordChange").Value = "True"; // I could find the password on the src server, a new one is needed       //Array.Find(_basicUser.Properties, ele => ele.Key == "ForcePasswordChange").Value;
+                Array.Find(result.Properties, ele => ele.Key == "Password").Value = "Abcd12345!!";
+                Array.Find(result.Properties, ele => ele.Key == "Status").Value = Array.Find(_basicUser.Properties, ele => ele.Key == "Status").Value;
+
+                try
+                {
+                    ConfigurationItem InvokeResult = _configApiClient2.InvokeMethod(result, "AddBasicUser");
+                    WriteInConsole("Basic User: " + Array.Find(InvokeResult.Properties, ele => ele.Key == "Name").Value + " - " + Array.Find(InvokeResult.Properties, ele => ele.Key == "State").Value);
+
+
+                }
+                catch (Exception ex)
+                {
+                    WriteInConsole(ex.Message);
+                }
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            ConfigurationItem s1 = treeView_S1.TopNode.Tag as ConfigurationItem;
+            FillAllChilds(s1, _configApiClient1);
+            Console.WriteLine("dfas");
+
+
+        }
+
+        private void button_MoveGroups_Click(object sender, EventArgs e)
+        {
+
+            IList<ConfigurationItem> groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.CameraGroup);
+            MoveGroup(groups, ItemTypes.CameraGroupFolder);
+
+            groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.MicrophoneGroup);
+            MoveGroup(groups, ItemTypes.MicrophoneGroupFolder);
+
+            groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.SpeakerGroup);
+            MoveGroup(groups, ItemTypes.SpeakerGroupFolder);
+
+            groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.MetadataGroup);
+            MoveGroup(groups, ItemTypes.MetadataGroupFolder);
+
+            groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.InputEventGroup);
+            MoveGroup(groups, ItemTypes.InputEventGroupFolder);
+
+            groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.OutputGroup);
+            MoveGroup(groups, ItemTypes.OutputGroupFolder);
+
+        }
+
+        private void MoveGroup(IList<ConfigurationItem> groups, String type)
+        {
+            foreach (ConfigurationItem group in groups)
+            {
+                ConfigurationItem _dest_Server = treeView_S2.TopNode.Tag as ConfigurationItem;
+                FillChildren(_dest_Server, _configApiClient2);
+                ConfigurationItem groupFolder = Array.Find(_dest_Server.Children, ele => ele.ItemType == type);
+
+                try
+                {
+                    CreateGroup(groupFolder, group);
+
+                    PopulateGroup(group, type, type.Replace("Group", ""));
+
+                }
+                catch (Exception e)
+                {
+                    WriteInConsole(e.Message);
+                }
+            }
+        }
+
+        private void PopulateGroup(ConfigurationItem group, String typeGroupFolder, string typeFolder)
+        {
+
+            /// PLEASE PLEASE PLEASE REFACTOR THIS 
+            /// 
+
+            FillChildren(group, _configApiClient1);
+            ConfigurationItem _cameraFolder_S1 = Array.Find(group.Children, ele => ele.ItemType == typeFolder);
+            FillChildren(_cameraFolder_S1, _configApiClient1);
+
+
+            ConfigurationItem s2 = treeView_S2.TopNode.Tag as ConfigurationItem;
+            FillChildren(s2, _configApiClient2);
+            ConfigurationItem _groupFolder = Array.Find(s2.Children, ele => ele.ItemType == typeGroupFolder);
+            _groupFolder.ChildrenFilled = false;
+            FillChildren(_groupFolder, _configApiClient2);
+
+            ConfigurationItem _cameraGroupFolder = Array.Find(_groupFolder.Children, ele => ele.DisplayName == group.DisplayName);
+            if (_cameraGroupFolder != null)
+            {
+                FillChildren(_cameraGroupFolder, _configApiClient2);
+
+                ConfigurationItem _cameraFolder = Array.Find(_cameraGroupFolder.Children, ele => ele.ItemType == typeFolder);
+
+                foreach (ConfigurationItem _camera_in_group_s1 in _cameraFolder_S1.Children)
+                {
+                    ConfigurationItem _hardware_in_s1 = GetDeviceHardware(_camera_in_group_s1, _configApiClient1);
+                    String name_in_s1 = Array.Find(_camera_in_group_s1.Properties, ele => ele.Key == "Name").Value;
+                    String address_in_s1 = Array.Find(_hardware_in_s1.Properties, ele => ele.Key == "Address").Value;
+                    ConfigurationItem device_in_s2 = FindDeviceByAddress(address_in_s1, name_in_s1, _configApiClient2);
+
+                    ConfigurationItem result = _configApiClient2.InvokeMethod(_cameraFolder, "AddDeviceGroupMember");
+                    Array.Find(result.Properties, ele => ele.Key == "ItemSelection").Value = device_in_s2.Path;
+                    ConfigurationItem result2 = _configApiClient2.InvokeMethod(result, "AddDeviceGroupMember");
+                }
+            }
+        }
+
+        private void CreateGroup(ConfigurationItem groupFolder, ConfigurationItem group)
+        {
+            ConfigurationItem result = _configApiClient2.InvokeMethod(groupFolder, "AddDeviceGroup");
+            Array.Find(result.Properties, ele => ele.Key == "GroupName").Value = Array.Find(group.Properties, ele => ele.Key == "Name").Value;
+            Array.Find(result.Properties, ele => ele.Key == "GroupDescription").Value = Array.Find(group.Properties, ele => ele.Key == "Description").Value;
+            ConfigurationItem InvokeResult = _configApiClient2.InvokeMethod(result, "AddDeviceGroup");
+            // return InvokeResult.Properties;
+        }
+
+
+
     }
-  
     /// <summary>
     /// Camera Properties class 
     /// </summary>
@@ -570,3 +1071,4 @@ namespace MoveHardware
     }
 
 }
+
