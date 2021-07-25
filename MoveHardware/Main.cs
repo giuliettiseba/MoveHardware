@@ -100,8 +100,22 @@ namespace MoveHardware
                                                            ItemTypes.MicrophoneGroup,
                                                            ItemTypes.MicrophoneGroupFolder,
 
-                                                           ItemTypes.Camera,
+
+                                              /*             ItemTypes.Camera,
                                                            ItemTypes.CameraFolder,
+
+                                                           ItemTypes.Microphone,
+                                                           ItemTypes.MicrophoneFolder,
+
+                                                           ItemTypes.Output,
+                                                           ItemTypes.OutputFolder,
+
+                                                           ItemTypes.InputEvent,
+                                                           ItemTypes.InputEventFolder,
+
+                                                           ItemTypes.Metadata,
+                                                           ItemTypes.MetadataFolder,
+                                              */
 
                                                            ItemTypes.SpeakerGroup,
                                                            ItemTypes.SpeakerGroupFolder,
@@ -114,6 +128,7 @@ namespace MoveHardware
 
                                                            ItemTypes.OutputGroup,
                                                            ItemTypes.OutputGroupFolder,
+
 
                                                            ItemTypes.UserFolder,
                                                            ItemTypes.User,
@@ -131,7 +146,7 @@ namespace MoveHardware
         private void Login(Uri uri, NetworkCredential nc, ConfigApiClient _configApiClient, Label toolStripStatusLabel, Button button_Connect)
         {
             WriteInConsole("Establishing connection to : " + uri + ".", LogType.message);
-            VideoOS.Platform.SDK.Environment.AddServer(uri, nc);                                                            // Add the server to the environment 
+            VideoOS.Platform.SDK.Environment.AddServer(false, uri, nc, true);                    // Add the server to the environment 
             try
             {
                 VideoOS.Platform.SDK.Environment.Login(uri, IntegrationId, IntegrationName, Version, ManufacturerName);     // attempt to login 
@@ -161,7 +176,7 @@ namespace MoveHardware
                                               : ConfigApiClient.ServerTypeEnum.Arcus;
             _configApiClient.Initialize();                                    // Initialize API
             WriteInConsole("Initializing API: " + _configApiClient.Token + ".", LogType.debug);
-            WriteInConsole("Initializing API: " + _configApiClient.Connected + ".", LogType.message);
+            WriteInConsole("Initializing API: " + _configApiClient.Connected + ".", LogType.info);
 
             if (_configApiClient.Connected)
             {
@@ -179,6 +194,8 @@ namespace MoveHardware
             }
             else
                 toolStripStatusLabel.Text = "Error logging on";             // If not connected change status label 
+            WriteInConsole("Connection to : " + uri + " established.", LogType.message);
+
 
         }
 
@@ -251,6 +268,7 @@ namespace MoveHardware
         /// <param name="treeView"></param>
         private void PopulateTreeView(ConfigApiClient _configApiClient, TreeView treeView)
         {
+            treeView.Nodes.Clear();
             var server = _configApiClient.GetItem("/");                                             // Start from the root
             WriteInConsole(server.DisplayName + ": Loading Configuration... ", LogType.info);
 
@@ -266,6 +284,7 @@ namespace MoveHardware
                 serverTn.Nodes.AddRange(AddChildren("/", _configApiClient));                            // Add root children
             });
 
+            WriteInConsole(server.DisplayName + ": Configuration Loaded. ", LogType.info);
 
         }
 
@@ -277,13 +296,17 @@ namespace MoveHardware
         /// <returns></returns>
         private TreeNode[] AddChildren(string node, ConfigApiClient _configApiClient)
         {
-            ConfigurationItem _node = _configApiClient.GetItem(node);
-            FillChildren(_node, _configApiClient);
-            WriteInConsole("Loading:" + _node.DisplayName, LogType.debug);
+            //          ConfigurationItem _node = _configApiClient.GetItem(node);
+            //           _node.ChildrenFilled = false;
+            //            FillChildren(_node, _configApiClient);
+
+            WriteInConsole("Loading:" + node, LogType.debug);
 
             List<TreeNode> children = new List<TreeNode>();                                         //  Create an empty list of TreeNode 
 
-            foreach (ConfigurationItem child in _node.Children)               //  For each clild of the parent node 
+            //        foreach (ConfigurationItem child in _node.Children)               //  For each clild of the parent node 
+            foreach (ConfigurationItem child in _configApiClient.GetChildItems(node))
+
             {
                 if (_showItemsType.Contains(child.ItemType))                                        //  Apply Filter 
                 {
@@ -389,7 +412,7 @@ namespace MoveHardware
                 {
                     IList<ConfigurationItem> checkedNodes = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.Hardware);                                                                     // Fill checkedNodes
 
-                    WriteInConsole("Hardware Number: " + checkedNodes.Count + ". Destination Recording Server: " + _dest_recordingServer.DisplayName, LogType.message);  // Show in the console the total number of hardware to be moved 
+                    WriteInConsole("Add " + checkedNodes.Count + "Hardware to " + _dest_recordingServer.DisplayName + " Recording Server", LogType.message);  // Show in the console the total number of hardware to be moved 
 
                     Cursor.Current = Cursors.WaitCursor;                            // Change cursor to wait 
                     DateTime startTime = DateTime.Now;                              // Save start time 
@@ -412,14 +435,17 @@ namespace MoveHardware
                 else MessageBox.Show("Please select a Recording Server ");   // the detination server has not been selected 
             }
         }
+        private void RefreshDestTreeView()
+        {
+            PopulateTreeView(_configApiClient2, treeView_S2);               // Refresh treeView
+        }
 
-
-        public static async Task StartAndWaitAllThrottledAsync(IEnumerable<Task> tasksToRun, int maxTasksToRunInParallel, CancellationToken cancellationToken = new CancellationToken())
+        public async Task StartAndWaitAllThrottledAsync(IEnumerable<Task> tasksToRun, int maxTasksToRunInParallel, CancellationToken cancellationToken = new CancellationToken())
         {
             await StartAndWaitAllThrottledAsync(tasksToRun, maxTasksToRunInParallel, -1, cancellationToken);
         }
 
-        public static async Task StartAndWaitAllThrottledAsync(IEnumerable<Task> tasksToRun, int maxTasksToRunInParallel, int timeoutInMilliseconds, CancellationToken cancellationToken = new CancellationToken())
+        public async Task StartAndWaitAllThrottledAsync(IEnumerable<Task> tasksToRun, int maxTasksToRunInParallel, int timeoutInMilliseconds, CancellationToken cancellationToken = new CancellationToken())
         {
             // Convert to a list of tasks so that we don't enumerate over it multiple times needlessly.
             var tasks = tasksToRun.ToList();
@@ -444,8 +470,12 @@ namespace MoveHardware
                 // Wait for all of the provided tasks to complete.
                 // We wait on the list of "post" tasks instead of the original tasks, otherwise there is a potential race condition where the throttler&amp;amp;#39;s using block is exited before some Tasks have had their "post" action completed, which references the throttler, resulting in an exception due to accessing a disposed object.
                 await Task.WhenAll(postTaskTasks.ToArray());
+                WriteInConsole("Adding Hardware Complete", LogType.message);
+                RefreshDestTreeView();               // Refresh treeView
+
             }
         }
+
 
         /// <summary>
         /// Get checked nodes aux methods 
@@ -689,6 +719,39 @@ namespace MoveHardware
 
 
 
+
+        private void AddRoleToServer(ConfigurationItem _role, ConfigurationItem _dest_roleFolder)
+        {
+
+            try                                                                                             // try to add the role to the dest server
+            {
+                WriteInConsole(_role.DisplayName + ": Adding Role.", LogType.message);
+
+                ConfigurationItem result = _configApiClient2.InvokeMethod(_dest_roleFolder, "AddRole");     // Invoke AddRole Method
+
+                //Fill the basic role information with the src role 
+                Array.Find(result.Properties, ele => ele.Key == "Name").Value = Array.Find(_role.Properties, ele => ele.Key == "Name").Value;
+                Array.Find(result.Properties, ele => ele.Key == "Description").Value = Array.Find(_role.Properties, ele => ele.Key == "Description").Value;
+                Array.Find(result.Properties, ele => ele.Key == "DualAuthorizationRequired").Value = Array.Find(_role.Properties, ele => ele.Key == "DualAuthorizationRequired").Value;
+                Array.Find(result.Properties, ele => ele.Key == "MakeUsersAnonymousDuringPTZSession").Value = Array.Find(_role.Properties, ele => ele.Key == "MakeUsersAnonymousDuringPTZSession").Value;
+                Array.Find(result.Properties, ele => ele.Key == "AllowMobileClientLogOn").Value = Array.Find(_role.Properties, ele => ele.Key == "AllowMobileClientLogOn").Value;
+                Array.Find(result.Properties, ele => ele.Key == "AllowSmartClientLogOn").Value = Array.Find(_role.Properties, ele => ele.Key == "AllowSmartClientLogOn").Value;
+                Array.Find(result.Properties, ele => ele.Key == "AllowWebClientLogOn").Value = Array.Find(_role.Properties, ele => ele.Key == "AllowWebClientLogOn").Value;
+
+                ConfigurationItem InvokeResult = _configApiClient2.InvokeMethod(result, "AddRole");        // Call invoke method with the properties 
+                WriteInConsole(_role.DisplayName + ": " + Array.Find(InvokeResult.Properties, ele => ele.Key == "State").Value, LogType.info);
+                _dest_roleFolder.ChildrenFilled = false;                                                   // Children have changed 
+            }
+            catch (Exception exp)
+            {
+
+                WriteInConsole(_role.DisplayName + ": Error Adding Role. " + exp.Message, LogType.error);
+            }
+        }
+
+
+
+
         /// <summary>z
         /// Click on Move Roles Buttom 
         /// </summary>
@@ -709,152 +772,91 @@ namespace MoveHardware
 
                 if (Array.Find(_role.Properties, ele => ele.Key == "RoleType").Value != "Adminstrative")            // If the role is not Adminstrative -- Misspell in the API -> Report ?
                 {
-
-                    try                                                                                             // try to add the role to the dest server
-                    {
-                        WriteInConsole(_role.DisplayName + ": Adding Role.", LogType.message);
-
-                        ConfigurationItem result = _configApiClient2.InvokeMethod(_dest_roleFolder, "AddRole");     // Invoke AddRole Method
-
-                        //Fill the basic role information with the src role 
-                        Array.Find(result.Properties, ele => ele.Key == "Name").Value = Array.Find(_role.Properties, ele => ele.Key == "Name").Value;
-                        Array.Find(result.Properties, ele => ele.Key == "Description").Value = Array.Find(_role.Properties, ele => ele.Key == "Description").Value;
-                        Array.Find(result.Properties, ele => ele.Key == "DualAuthorizationRequired").Value = Array.Find(_role.Properties, ele => ele.Key == "DualAuthorizationRequired").Value;
-                        Array.Find(result.Properties, ele => ele.Key == "MakeUsersAnonymousDuringPTZSession").Value = Array.Find(_role.Properties, ele => ele.Key == "MakeUsersAnonymousDuringPTZSession").Value;
-                        Array.Find(result.Properties, ele => ele.Key == "AllowMobileClientLogOn").Value = Array.Find(_role.Properties, ele => ele.Key == "AllowMobileClientLogOn").Value;
-                        Array.Find(result.Properties, ele => ele.Key == "AllowSmartClientLogOn").Value = Array.Find(_role.Properties, ele => ele.Key == "AllowSmartClientLogOn").Value;
-                        Array.Find(result.Properties, ele => ele.Key == "AllowWebClientLogOn").Value = Array.Find(_role.Properties, ele => ele.Key == "AllowWebClientLogOn").Value;
-
-                        ConfigurationItem InvokeResult = _configApiClient2.InvokeMethod(result, "AddRole");        // Call invoke method with the properties 
-                        WriteInConsole(_role.DisplayName + ": " + Array.Find(InvokeResult.Properties, ele => ele.Key == "State").Value, LogType.info);
-                        _dest_roleFolder.ChildrenFilled = false;                                                   // Children have changed 
-                    }
-                    catch (Exception exp)
-                    {
-
-                        WriteInConsole(_role.DisplayName + ": Error Adding Role. " + exp.Message, LogType.error);
-                    }
-
-                    try                                                                                          // Scan all the camaras and copy the permisions to the dest role 
-                    {
-                        WriteInConsole(_role.DisplayName + ": Set Role Permisions to role", LogType.message);
-                        ConfigurationItem _role_s2 = Find_S1_Role_in_S2(_role);
-                        ConfigurationItem _src_Server = treeView_S1.TopNode.Tag as ConfigurationItem;                                                   // Get Src Server 
-
-                        WriteInConsole(_role.DisplayName + ": Gathering Permisions", LogType.info);
-
-                        FillChildren(_src_Server, _configApiClient1);                                                                                   // Fill Src Server clildrens
-                        ConfigurationItem _recordingServerFolder = Array.Find(_src_Server.Children, ele => ele.ItemType == "RecordingServerFolder");    // Get Src Recording Server Folder
-                        FillChildren(_recordingServerFolder, _configApiClient1);                                                                        // Fill Src Recording Server Folder
-
-                        foreach (ConfigurationItem _recodingServer in _recordingServerFolder.Children)                                                  // For each Recording Server in the folder
-                        {
-                            FillChildren(_recodingServer, _configApiClient1);                                                                           // Fill the Recording Server Children 
-                            ConfigurationItem _hardwareFolder = Array.Find(_recodingServer.Children, ele => ele.ItemType == "HardwareFolder");          // Get Hardware Folder
-                            FillChildren(_hardwareFolder, _configApiClient1);                                                                           // Fill the Hardware Folder 
-
-                            foreach (ConfigurationItem _hardware in _hardwareFolder.Children)                                                           // For each Folder in the Hardware Folder 
-                            {
-                                FillChildren(_hardware, _configApiClient1);                                                                             // Fill the Hardware Folder
-                                ConfigurationItem[] _devicesFolders = Array.FindAll(_hardware.Children, ele => devicesFolders.Contains(ele.ItemType));  // Get the List of Devices Folders (Cams/Mics/In/Out/Meta)
-
-                                foreach (ConfigurationItem _deviceFolder in _devicesFolders)                                                            // For each Device Folder
-                                {
-                                    FillChildren(_deviceFolder, _configApiClient1);                                                                     // Fill the Device Folder Children 
-
-                                    foreach (ConfigurationItem _device in _deviceFolder.Children)                                                       // For each Device in Device Folder 
-                                    {
-                                        WriteInConsole(_role.DisplayName + ": Setting permision permisions on device: " + _device.DisplayName, LogType.debug);
-
-                                        Property[] _permisions = GetRolePermissions(_role, _device);                                                    // Get the permisions on the Src server for the role
-                                        ConfigurationItem _device_s2 = Find_S1_Device_in_S2(_device);                                                   // Find the Device in the Dest Server
-
-                                        SetDevicePermisions(_role_s2, _device_s2, _permisions);                                                         // Set the permision
-                                    }
-                                }
-                            }
-                        }
-                        WriteInConsole(_role.DisplayName + ": Success Setting Role Permisions : ", LogType.message);
-                    }
-                    catch (Exception exp)
-                    {
-                        WriteInConsole(_role.DisplayName + ": Error Setting Role Permisions : " + exp.Message, LogType.error);
-                    }
-
-                    try
-                    {
-                        WriteInConsole(_role.DisplayName + ": Setting Overall permissions to role", LogType.message);                                   // Set Overall permissions to the role 
-
-                        ConfigurationItem _role_s2 = Find_S1_Role_in_S2(_role);                                                                         // Find Role in dest server 
-                        FillChildren(_role_s2, _configApiClient2);                                                                                      // Fill role childrens 
-
-                        ConfigurationItem _result_s1 = _configApiClient1.InvokeMethod(_role, "ChangeOverallSecurityPermissions");                       // Invoke ChangeOverallSecurityPermissions in S1
-                        ConfigurationItem _result_s2 = _configApiClient2.InvokeMethod(_role_s2, "ChangeOverallSecurityPermissions");                    // Invoke ChangeOverallSecurityPermissions in S2
-
-                        foreach (ValueTypeInfo vti in _result_s1.Properties[0].ValueTypeInfos)                                                          // Iterate all the SecurityNamespace avilables 
-                        {
-                            WriteInConsole(_role.DisplayName + ": Setting " + vti.Name + "Role Overall Permisions", LogType.debug);                                      // Show result - Success? No errors, but not confiration from API
-                            _result_s1.Properties[0].Value = vti.Value;                                                                                 // Set the SecurityNamespace to the S1 invoke method 
-                            _result_s2.Properties[0].Value = vti.Value;                                                                                 // Set the SecurityNamespace to the S2 invoke method 
-
-                            ConfigurationItem _result_2_s1 = _configApiClient1.InvokeMethod(_result_s1, "ChangeOverallSecurityPermissions");            // Invoke Method to get the Permisions in S1
-                            ConfigurationItem _result_2_s2 = _configApiClient2.InvokeMethod(_result_s2, "ChangeOverallSecurityPermissions");            // Invoke Method to get the Permisions in S2
-
-                            _result_2_s2.Properties = _result_2_s1.Properties;                                                                          // Copy the permisions from S2 to S1 
-
-                            ConfigurationItem _result_3_s2 = _configApiClient2.InvokeMethod(_result_2_s2, "ChangeOverallSecurityPermissions");          // Invoke method again to save the changes in S2
-
-
-                        }
-                    }
-                    catch (Exception exp)
-                    {
-                        WriteInConsole(_role.DisplayName + ": Error Setting Role Overall Permisions : " + exp.Message, LogType.error);                                  // Show error 
-                    }
+                    AddRoleToServer(_role, _dest_roleFolder);
+                    CopyPermitionsToDestRole(_role);
+                    SetOveralPermisions(_role);
                 }
+                AddUsersToRole(_role);
 
-                try
+            }
+            RefreshDestTreeView();
+        }
+
+        private void AddUsersToRole(ConfigurationItem _role)
+        {
+            try
+            {
+                WriteInConsole(_role.DisplayName + ": Add users to role", LogType.info);
+
+                ConfigurationItem _userFolder = Array.Find(_role.Children, ele => ele.ItemType == "UserFolder");                                    // Get user folder from source role 
+                FillChildren(_userFolder, _configApiClient1);                                                                                       // Fill Children 
+
+                ConfigurationItem _role_s2 = Find_S1_Role_in_S2(_role);                                                                             // Find Role en dest server 
+                FillChildren(_role_s2, _configApiClient2);                                                                                          // Fill Children 
+
+                ConfigurationItem _userFolder_s2 = Array.Find(_role_s2.Children, ele => ele.ItemType == "UserFolder");                              // Get user folder from dest role
+
+                foreach (ConfigurationItem _user in _userFolder.Children)                                                                           // For each user in userFolder 
                 {
-                    WriteInConsole(_role.DisplayName + ": Add users to role", LogType.info);
-
-                    ConfigurationItem _userFolder = Array.Find(_role.Children, ele => ele.ItemType == "UserFolder");                                    // Get user folder from source role 
-                    FillChildren(_userFolder, _configApiClient1);                                                                                       // Fill Children 
-
-                    ConfigurationItem _role_s2 = Find_S1_Role_in_S2(_role);                                                                             // Find Role en dest server 
-                    FillChildren(_role_s2, _configApiClient2);                                                                                          // Fill Children 
-
-                    ConfigurationItem _userFolder_s2 = Array.Find(_role_s2.Children, ele => ele.ItemType == "UserFolder");                              // Get user folder from dest role
-
-                    foreach (ConfigurationItem _user in _userFolder.Children)                                                                           // For each user in userFolder 
+                    WriteInConsole(_role.DisplayName + ": Adding " + _user.DisplayName + " users to role", LogType.info);
+                    // If the user is BasicUser
+                    if (Array.Find(_user.Properties, ele => ele.Key == "IdentityType").Value == "BasicUser")
                     {
-                        WriteInConsole(_role.DisplayName + ": Adding " + _user.DisplayName + " users to role", LogType.info);
-                        // If the user is BasicUser
-                        if (Array.Find(_user.Properties, ele => ele.Key == "IdentityType").Value == "BasicUser")
-                        {
-                            ConfigurationItem _user_s2 = Find_S1_User_in_S2(_user);                                                                         // Find the user in dest server 
-                            ConfigurationItem result = _configApiClient2.InvokeMethod(_userFolder_s2, "AddRoleMember");                                     // Invoke AddRoleMember in dest server, UserFolder
-                            Array.Find(result.Properties, ele => ele.Key == "Sid").Value = Array.Find(_user_s2.Properties, ele => ele.Key == "Id").Value;   // Set as Sid the Id of the basicUser 
-                            ConfigurationItem result2 = _configApiClient2.InvokeMethod(result, "AddRoleMember");                                            // Invoke method again to save. 
-                            WriteInConsole(_role.DisplayName + ": Adding " + _user.DisplayName + " users to role: " + Array.Find(result2.Properties, ele => ele.Key == "State").Value, LogType.message); // Show result
+                        ConfigurationItem _user_s2 = Find_S1_User_in_S2(_user);                                                                         // Find the user in dest server 
+                        ConfigurationItem result = _configApiClient2.InvokeMethod(_userFolder_s2, "AddRoleMember");                                     // Invoke AddRoleMember in dest server, UserFolder
+                        Array.Find(result.Properties, ele => ele.Key == "Sid").Value = Array.Find(_user_s2.Properties, ele => ele.Key == "Id").Value;   // Set as Sid the Id of the basicUser 
+                        ConfigurationItem result2 = _configApiClient2.InvokeMethod(result, "AddRoleMember");                                            // Invoke method again to save. 
+                        WriteInConsole(_role.DisplayName + ": Adding " + _user.DisplayName + " users to role: " + Array.Find(result2.Properties, ele => ele.Key == "State").Value, LogType.message); // Show result
 
-                        }
-                        // If Windows User Just add the ID and the method will do the rest 
-                        else
-                        {
-                            ConfigurationItem result = _configApiClient2.InvokeMethod(_userFolder_s2, "AddRoleMember");                                                                     // Invoke Method in dest server
-                            Array.Find(result.Properties, ele => ele.Key == "Sid").Value = Array.Find(_user.Properties, ele => ele.Key == "Sid").Value;                                     // Set the Sid from the src user
-                            ConfigurationItem result2 = _configApiClient2.InvokeMethod(result, "AddRoleMember");                                                                            // Call method again to execute 
-                            WriteInConsole(_role.DisplayName + ": Adding " + _user.DisplayName + " users to role: " + Array.Find(result2.Properties, ele => ele.Key == "State").Value, LogType.message); // Show result
+                    }
+                    // If Windows User Just add the ID and the method will do the rest 
+                    else
+                    {
+                        ConfigurationItem result = _configApiClient2.InvokeMethod(_userFolder_s2, "AddRoleMember");                                                                     // Invoke Method in dest server
+                        Array.Find(result.Properties, ele => ele.Key == "Sid").Value = Array.Find(_user.Properties, ele => ele.Key == "Sid").Value;                                     // Set the Sid from the src user
+                        ConfigurationItem result2 = _configApiClient2.InvokeMethod(result, "AddRoleMember");                                                                            // Call method again to execute 
+                        WriteInConsole(_role.DisplayName + ": Adding " + _user.DisplayName + " users to role: " + Array.Find(result2.Properties, ele => ele.Key == "State").Value, LogType.message); // Show result
 
-                        }
                     }
                 }
-                catch (Exception exp)
+            }
+            catch (Exception exp)
+            {
+                WriteInConsole(_role.DisplayName + ": " + exp.Message, LogType.error); // Show 
+            }
+        }
+
+        private void SetOveralPermisions(ConfigurationItem _role)
+        {
+            try
+            {
+                WriteInConsole(_role.DisplayName + ": Setting Overall permissions to role", LogType.message);                                   // Set Overall permissions to the role 
+
+                ConfigurationItem _role_s2 = Find_S1_Role_in_S2(_role);                                                                         // Find Role in dest server 
+                FillChildren(_role_s2, _configApiClient2);                                                                                      // Fill role childrens 
+
+                ConfigurationItem _result_s1 = _configApiClient1.InvokeMethod(_role, "ChangeOverallSecurityPermissions");                       // Invoke ChangeOverallSecurityPermissions in S1
+                ConfigurationItem _result_s2 = _configApiClient2.InvokeMethod(_role_s2, "ChangeOverallSecurityPermissions");                    // Invoke ChangeOverallSecurityPermissions in S2
+
+                foreach (ValueTypeInfo vti in _result_s1.Properties[0].ValueTypeInfos)                                                          // Iterate all the SecurityNamespace avilables 
                 {
-                    WriteInConsole(_role.DisplayName + ": " + exp.Message, LogType.error); // Show 
+                    WriteInConsole(_role.DisplayName + ": Setting " + vti.Name + "Role Overall Permisions", LogType.debug);                                      // Show result - Success? No errors, but not confiration from API
+                    _result_s1.Properties[0].Value = vti.Value;                                                                                 // Set the SecurityNamespace to the S1 invoke method 
+                    _result_s2.Properties[0].Value = vti.Value;                                                                                 // Set the SecurityNamespace to the S2 invoke method 
+
+                    ConfigurationItem _result_2_s1 = _configApiClient1.InvokeMethod(_result_s1, "ChangeOverallSecurityPermissions");            // Invoke Method to get the Permisions in S1
+                    ConfigurationItem _result_2_s2 = _configApiClient2.InvokeMethod(_result_s2, "ChangeOverallSecurityPermissions");            // Invoke Method to get the Permisions in S2
+
+                    _result_2_s2.Properties = _result_2_s1.Properties;                                                                          // Copy the permisions from S2 to S1 
+
+                    ConfigurationItem _result_3_s2 = _configApiClient2.InvokeMethod(_result_2_s2, "ChangeOverallSecurityPermissions");          // Invoke method again to save the changes in S2
+
+
                 }
-
-
+            }
+            catch (Exception exp)
+            {
+                WriteInConsole(_role.DisplayName + ": Error Setting Role Overall Permisions : " + exp.Message, LogType.error);                                  // Show error 
             }
         }
 
@@ -996,6 +998,7 @@ namespace MoveHardware
             {
                 FillChildren(_recordingServer, configApiClient);
                 ConfigurationItem _hardwareFolder = Array.Find(_recordingServer.Children, ele => ele.ItemType == "HardwareFolder");
+                _hardwareFolder.ChildrenFilled = false;
                 FillChildren(_hardwareFolder, configApiClient);
 
                 foreach (ConfigurationItem _hardware in _hardwareFolder.Children)
@@ -1023,11 +1026,13 @@ namespace MoveHardware
                             }
 
                         }
-                        throw new Exception("Device " + srcDeviceName + " was not found in the Hardware " + _hardware.DisplayName + " in the server " + _server.DisplayName);
+                        //throw new Exception("Device " + srcDeviceName + " was not found in the Hardware " + _hardware.DisplayName + " in the server " + _server.DisplayName);
+                        return null;
                     }
                 }
             }
-            throw new Exception("Hardware with IP " + srcAddress + " was not found in the server " + _server.DisplayName);
+            //throw new Exception("Hardware with IP " + srcAddress + " was not found in the server " + _server.DisplayName);
+            return null;
 
         }
 
@@ -1063,17 +1068,13 @@ namespace MoveHardware
             ConfigurationItem _dest_BasicUserFolder = Array.Find(_dest_Server.Children, ele => ele.ItemType == "BasicUserFolder");
             FillChildren(_dest_BasicUserFolder, _configApiClient2);
 
-            WriteInConsole("Moving " + _src_BasicUser.Count + ".", LogType.message);
+            WriteInConsole("Moving " + _src_BasicUser.Count + " basic user(s).", LogType.message);
 
             foreach (ConfigurationItem _basicUser in _src_BasicUser)
             {
-                WriteInConsole(_basicUser + ": Moving basic user.", LogType.info);
-
-                WriteInConsole(_basicUser + ": Gathering infomarion.", LogType.debug);
+                WriteInConsole(_basicUser.DisplayName + ": Moving basic user.", LogType.info);
 
                 FillAllChilds(_basicUser, _configApiClient1);
-
-                WriteInConsole(_basicUser + ": adding infomarion.", LogType.debug);
 
                 ConfigurationItem result = _configApiClient2.InvokeMethod(_dest_BasicUserFolder, "AddBasicUser");
                 Array.Find(result.Properties, ele => ele.Key == "Name").Value = Array.Find(_basicUser.Properties, ele => ele.Key == "Name").Value;
@@ -1087,114 +1088,146 @@ namespace MoveHardware
                 {
                     ConfigurationItem InvokeResult = _configApiClient2.InvokeMethod(result, "AddBasicUser");
                     WriteInConsole(_basicUser + ": " + Array.Find(InvokeResult.Properties, ele => ele.Key == "State").Value, LogType.message);
-
                 }
                 catch (Exception ex)
                 {
                     WriteInConsole(_basicUser + ": " + ex.Message, LogType.error);
-
-
                 }
             }
+
+            WriteInConsole("Moving " + _src_BasicUser.Count + " basic user(s) Complete.", LogType.message);
+
+
+            RefreshDestTreeView();
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-
+            PopulateTreeView(_configApiClient2, treeView_S2);
 
 
         }
 
         private void button_MoveGroups_Click(object sender, EventArgs e)
         {
-            // Paralleism Candidate 
+            //IList<ConfigurationItem> groups = 
 
-            IList<ConfigurationItem> groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.CameraGroup);
-            MoveGroup(groups, ItemTypes.CameraGroupFolder);
+            List<Task> taskList = new List<Task>();
 
-            groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.MicrophoneGroup);
-            MoveGroup(groups, ItemTypes.MicrophoneGroupFolder);
+            taskList.Add(new Task(() =>
+            {
+                MoveGroup(GetCheckedNodes(treeView_S1.Nodes, ItemTypes.CameraGroup), ItemTypes.CameraGroupFolder);
+            }));
+            taskList.Add(new Task(() =>
+            {
+                MoveGroup(GetCheckedNodes(treeView_S1.Nodes, ItemTypes.MicrophoneGroup), ItemTypes.MicrophoneGroupFolder);
+            }));
+            taskList.Add(new Task(() =>
+            {
+                MoveGroup(GetCheckedNodes(treeView_S1.Nodes, ItemTypes.SpeakerGroup), ItemTypes.SpeakerGroupFolder);
+            }));
+            taskList.Add(new Task(() =>
+            {
+                MoveGroup(GetCheckedNodes(treeView_S1.Nodes, ItemTypes.MetadataGroup), ItemTypes.MetadataGroupFolder);
+            }));
+            taskList.Add(new Task(() =>
+            {
+                MoveGroup(GetCheckedNodes(treeView_S1.Nodes, ItemTypes.InputEventGroup), ItemTypes.InputEventGroupFolder);
+            }));
+            taskList.Add(new Task(() =>
+            {
+                MoveGroup(GetCheckedNodes(treeView_S1.Nodes, ItemTypes.OutputGroup), ItemTypes.OutputGroupFolder);
+            }));
 
-            groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.SpeakerGroup);
-            MoveGroup(groups, ItemTypes.SpeakerGroupFolder);
+            Parallel.ForEach(taskList, task => task.Start());
 
-            groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.MetadataGroup);
-            MoveGroup(groups, ItemTypes.MetadataGroupFolder);
-
-            groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.InputEventGroup);
-            MoveGroup(groups, ItemTypes.InputEventGroupFolder);
-
-            groups = GetCheckedNodes(treeView_S1.Nodes, ItemTypes.OutputGroup);
-            MoveGroup(groups, ItemTypes.OutputGroupFolder);
-
+            RefreshDestTreeView();
         }
 
         private void MoveGroup(IList<ConfigurationItem> groups, String type)
         {
-            WriteInConsole("Moving " + groups.Count, LogType.message);
-            foreach (ConfigurationItem group in groups)
+            if (groups.Count > 0)
             {
-                WriteInConsole(group + ": Moving", LogType.info);
-
-                ConfigurationItem _dest_Server = treeView_S2.TopNode.Tag as ConfigurationItem;
-                WriteInConsole(group + ": Gathering Information", LogType.info);
-
-                FillChildren(_dest_Server, _configApiClient2);
-                ConfigurationItem groupFolder = Array.Find(_dest_Server.Children, ele => ele.ItemType == type);
-
-                try
+                WriteInConsole("Moving " + groups.Count + " " + groups[0].ItemType, LogType.message);
+                foreach (ConfigurationItem group in groups)
                 {
-                    WriteInConsole(group + ": Creating Group", LogType.info);
+                    //ConfigurationItem _dest_Server = treeView_S2.TopNode.Tag as ConfigurationItem;
+                    ConfigurationItem _dest_Server = _configApiClient2.GetItem("/");
 
-                    CreateGroup(groupFolder, group);
+                    FillChildren(_dest_Server, _configApiClient2);
+                    ConfigurationItem groupFolder = Array.Find(_dest_Server.Children, ele => ele.ItemType == type);
 
-                    WriteInConsole(group + ": Populate Group", LogType.info);
+                    try
+                    {
+                        WriteInConsole(group.DisplayName + ": Creating Group", LogType.info);
+                        CreateGroup(groupFolder, group);
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteInConsole(group.DisplayName + ": " + ex.Message, LogType.error);
+                    }
 
-                    PopulateGroup(group, type, type.Replace("Group", ""));
-
+                    try
+                    {
+                        WriteInConsole(group.DisplayName + ": Populate Group", LogType.info);
+                        PopulateGroup(group, type, type.Replace("Group", ""));
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteInConsole(group.DisplayName + ": " + ex.Message, LogType.error);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    WriteInConsole(group + ": " + ex.Message, LogType.error);
-
-                }
+                WriteInConsole("Moving " + groups.Count + " " + groups[0].ItemType + " Complete", LogType.message);
             }
         }
 
         private void PopulateGroup(ConfigurationItem group, String typeGroupFolder, string typeFolder)
         {
 
-            /// PLEASE PLEASE PLEASE REFACTOR THIS 
-            /// 
-
             FillChildren(group, _configApiClient1);
-            ConfigurationItem _cameraFolder_S1 = Array.Find(group.Children, ele => ele.ItemType == typeFolder);
-            FillChildren(_cameraFolder_S1, _configApiClient1);
+            ConfigurationItem _device_Folder_S1 = Array.Find(group.Children, ele => ele.ItemType == typeFolder);
+            FillChildren(_device_Folder_S1, _configApiClient1);
 
 
-            ConfigurationItem s2 = treeView_S2.TopNode.Tag as ConfigurationItem;
+            //ConfigurationItem s2 = treeView_S2.TopNode.Tag as ConfigurationItem;
+            ConfigurationItem s2 = _configApiClient2.GetItem("/");
             FillChildren(s2, _configApiClient2);
             ConfigurationItem _groupFolder = Array.Find(s2.Children, ele => ele.ItemType == typeGroupFolder);
             _groupFolder.ChildrenFilled = false;
             FillChildren(_groupFolder, _configApiClient2);
 
-            ConfigurationItem _cameraGroupFolder = Array.Find(_groupFolder.Children, ele => ele.DisplayName == group.DisplayName);
-            if (_cameraGroupFolder != null)
+            ConfigurationItem _deviceGroupFolder = Array.Find(_groupFolder.Children, ele => ele.DisplayName == group.DisplayName);
+            if (_deviceGroupFolder != null)
             {
-                FillChildren(_cameraGroupFolder, _configApiClient2);
+                FillChildren(_deviceGroupFolder, _configApiClient2);
 
-                ConfigurationItem _cameraFolder = Array.Find(_cameraGroupFolder.Children, ele => ele.ItemType == typeFolder);
+                ConfigurationItem _deviceFolder = Array.Find(_deviceGroupFolder.Children, ele => ele.ItemType == typeFolder);
 
-                foreach (ConfigurationItem _camera_in_group_s1 in _cameraFolder_S1.Children)
+                foreach (ConfigurationItem _device_in_group_s1 in _device_Folder_S1.Children)
                 {
-                    ConfigurationItem _hardware_in_s1 = GetDeviceHardware(_camera_in_group_s1, _configApiClient1);
-                    String name_in_s1 = Array.Find(_camera_in_group_s1.Properties, ele => ele.Key == "Name").Value;
+                    ConfigurationItem _hardware_in_s1 = GetDeviceHardware(_device_in_group_s1, _configApiClient1);
+                    String name_in_s1 = Array.Find(_device_in_group_s1.Properties, ele => ele.Key == "Name").Value;
                     String address_in_s1 = Array.Find(_hardware_in_s1.Properties, ele => ele.Key == "Address").Value;
                     ConfigurationItem device_in_s2 = FindDeviceByAddress(address_in_s1, name_in_s1, _configApiClient2);
 
-                    ConfigurationItem result = _configApiClient2.InvokeMethod(_cameraFolder, "AddDeviceGroupMember");
-                    Array.Find(result.Properties, ele => ele.Key == "ItemSelection").Value = device_in_s2.Path;
-                    ConfigurationItem result2 = _configApiClient2.InvokeMethod(result, "AddDeviceGroupMember");
+                    if (device_in_s2 != null)
+                    {
+                        try
+                        {
+                            ConfigurationItem result = _configApiClient2.InvokeMethod(_deviceFolder, "AddDeviceGroupMember");
+                            Array.Find(result.Properties, ele => ele.Key == "ItemSelection").Value = device_in_s2.Path;
+                            ConfigurationItem result2 = _configApiClient2.InvokeMethod(result, "AddDeviceGroupMember");
+                            WriteInConsole(group.DisplayName + ": Device " + _device_in_group_s1.DisplayName + " added to " + _deviceFolder.DisplayName, LogType.info);
+                        }
+                        catch (Exception ex)
+                        {
+                            WriteInConsole(group.DisplayName + ": Device " + _device_in_group_s1.DisplayName + " - " + ex.Message, LogType.error);
+                        }
+
+                    }
+                    else
+                        WriteInConsole(group.DisplayName + ": " + name_in_s1 + " was not found", LogType.error);
+
                 }
             }
         }
@@ -1211,52 +1244,59 @@ namespace MoveHardware
 
 
 
-        /// <summary>
-        /// Auxiliar method to write in the console
-        /// </summary>
-        /// <param name="text"></param>
-        private void WriteInConsole(string text, LogType type)
+        private void CopyPermitionsToDestRole(ConfigurationItem _role)
         {
-
-            textBox_Console.Invoke((MethodInvoker)delegate
+            try                                                                                          // Scan all the camaras and copy the permisions to the dest role 
             {
-                Color _color;
-                switch (type)
+                WriteInConsole(_role.DisplayName + ": Set Role Permisions to role", LogType.message);
+                ConfigurationItem _role_s2 = Find_S1_Role_in_S2(_role);
+                ConfigurationItem _src_Server = treeView_S1.TopNode.Tag as ConfigurationItem;                                                   // Get Src Server 
+
+                WriteInConsole(_role.DisplayName + ": Granting Permisions", LogType.info);
+
+                FillChildren(_src_Server, _configApiClient1);                                                                                   // Fill Src Server clildrens
+                ConfigurationItem _recordingServerFolder = Array.Find(_src_Server.Children, ele => ele.ItemType == "RecordingServerFolder");    // Get Src Recording Server Folder
+                FillChildren(_recordingServerFolder, _configApiClient1);                                                                        // Fill Src Recording Server Folder
+
+                foreach (ConfigurationItem _recodingServer in _recordingServerFolder.Children)                                                  // For each Recording Server in the folder
                 {
-                    case LogType.debug:
-                        _color = debugColor;
-                        break;
-                    case LogType.message:
-                        _color = messageColor;
-                        break;
-                    case LogType.info:
-                        _color = infoColor;
-                        break;
-                    case LogType.error:
-                        _color = errorColor;
-                        break;
-                    default:
-                        _color = Color.White;
-                        break;
+                    FillChildren(_recodingServer, _configApiClient1);                                                                           // Fill the Recording Server Children 
+                    ConfigurationItem _hardwareFolder = Array.Find(_recodingServer.Children, ele => ele.ItemType == "HardwareFolder");          // Get Hardware Folder
+                    FillChildren(_hardwareFolder, _configApiClient1);                                                                           // Fill the Hardware Folder 
+
+                    foreach (ConfigurationItem _hardware in _hardwareFolder.Children)                                                           // For each Folder in the Hardware Folder 
+                    {
+                        FillChildren(_hardware, _configApiClient1);                                                                             // Fill the Hardware Folder
+                        ConfigurationItem[] _devicesFolders = Array.FindAll(_hardware.Children, ele => devicesFolders.Contains(ele.ItemType));  // Get the List of Devices Folders (Cams/Mics/In/Out/Meta)
+
+                        foreach (ConfigurationItem _deviceFolder in _devicesFolders)                                                            // For each Device Folder
+                        {
+                            FillChildren(_deviceFolder, _configApiClient1);                                                                     // Fill the Device Folder Children 
+
+
+                            foreach (ConfigurationItem _device in _deviceFolder.Children)
+                            {
+                                WriteInConsole(_role.DisplayName + ": Setting permision permisions on device: " + _device.DisplayName, LogType.debug);
+
+                                Property[] _permisions = GetRolePermissions(_role, _device);                                                    // Get the permisions on the Src server for the role
+
+                                ConfigurationItem _device_s2 = Find_S1_Device_in_S2(_device);                                                   // Find the Device in the Dest Server
+                                if (_device_s2 != null) SetDevicePermisions(_role_s2, _device_s2, _permisions);                                                         // Set the permision
+                                else
+                                {
+                                    WriteInConsole(_role.DisplayName + ": " + _device.DisplayName + " Device not found", LogType.error);
+                                }
+                            }
+                        }
+                    }
                 }
-
-
-
-                textBox_Console.SelectionStart = textBox_Console.TextLength;
-                textBox_Console.SelectionLength = 0;
-
-                textBox_Console.SelectionColor = _color;
-                textBox_Console.AppendText(DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss") + ": " + text + Environment.NewLine);
-                textBox_Console.SelectionColor = textBox_Console.ForeColor;
-
-
-
-
-                textBox_Console.SelectionStart = textBox_Console.TextLength;
-                textBox_Console.ScrollToCaret();
-            });
+                WriteInConsole(_role.DisplayName + ": Success Setting Role Permisions : ", LogType.message);
+            }
+            catch (Exception exp)
+            {
+                WriteInConsole(_role.DisplayName + ": Error Setting Role Permisions : " + exp.Message, LogType.error);
+            }
         }
-
 
         enum LogType
         {
@@ -1266,6 +1306,75 @@ namespace MoveHardware
             error,
         }
 
+
+
+        //static bool debug = true;
+        /// <summary>
+        /// Auxiliar method to write in the console
+        /// </summary>
+        /// <param name="text"></param>
+        private void WriteInConsole(string text, LogType type)
+        {
+
+            if (type != LogType.debug)
+
+            {
+
+                textBox_Console.Invoke((MethodInvoker)delegate
+                {
+                    Color _color;
+                    switch (type)
+                    {
+                        case LogType.debug:
+                            _color = debugColor;
+                            break;
+                        case LogType.message:
+                            _color = messageColor;
+                            break;
+                        case LogType.info:
+                            _color = infoColor;
+                            break;
+                        case LogType.error:
+                            _color = errorColor;
+                            break;
+                        default:
+                            _color = Color.White;
+                            break;
+                    }
+
+
+
+                    textBox_Console.SelectionStart = textBox_Console.TextLength;
+                    textBox_Console.SelectionLength = 0;
+
+                    textBox_Console.SelectionColor = _color;
+                    textBox_Console.AppendText(DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss") + ": " + text + Environment.NewLine);
+                    textBox_Console.SelectionColor = textBox_Console.ForeColor;
+
+                    textBox_Console.SelectionStart = textBox_Console.TextLength;
+                    textBox_Console.ScrollToCaret();
+                });
+            }
+        }
+
+        private void treeView_S1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F5)
+            {
+                PopulateTreeView(_configApiClient1, treeView_S1);
+                e.Handled = true;
+            }
+
+        }
+
+        private void treeView_S2_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F5)
+            {
+                PopulateTreeView(_configApiClient2, treeView_S2);
+                e.Handled = true;
+            }
+        }
     }
     /// <summary>
     /// Camera Properties class 
