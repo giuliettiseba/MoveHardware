@@ -38,7 +38,7 @@ namespace MoveHardware
             this.label3 = new System.Windows.Forms.Label();
             this.textBox_User_S1 = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.textBox_S1 = new System.Windows.Forms.TextBox();
+            this.textBox_Address_S1 = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.treeView_S1 = new System.Windows.Forms.TreeView();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
@@ -53,16 +53,18 @@ namespace MoveHardware
             this.textBox_Address_S2 = new System.Windows.Forms.TextBox();
             this.label9 = new System.Windows.Forms.Label();
             this.treeView_S2 = new System.Windows.Forms.TreeView();
-            this.button1 = new System.Windows.Forms.Button();
-            this.numericUpDown_MaxDegreeOfParallelism = new System.Windows.Forms.NumericUpDown();
-            this.label5 = new System.Windows.Forms.Label();
-            this.button_MoveRoles = new System.Windows.Forms.Button();
-            this.button_MoveBasicUsers = new System.Windows.Forms.Button();
-            this.button_MoveGroups = new System.Windows.Forms.Button();
             this.textBox_Console = new System.Windows.Forms.RichTextBox();
             this.button_SaveLogs = new System.Windows.Forms.Button();
+            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.button_MoveGroups = new System.Windows.Forms.Button();
+            this.button_MoveBasicUsers = new System.Windows.Forms.Button();
+            this.button_MoveRoles = new System.Windows.Forms.Button();
+            this.label5 = new System.Windows.Forms.Label();
+            this.numericUpDown_MaxDegreeOfParallelism = new System.Windows.Forms.NumericUpDown();
+            this.button1 = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
+            this.groupBox3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown_MaxDegreeOfParallelism)).BeginInit();
             this.SuspendLayout();
             // 
@@ -76,7 +78,7 @@ namespace MoveHardware
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.textBox_User_S1);
             this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Controls.Add(this.textBox_S1);
+            this.groupBox1.Controls.Add(this.textBox_Address_S1);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.ForeColor = System.Drawing.Color.White;
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
@@ -101,7 +103,7 @@ namespace MoveHardware
             this.Button_Connect_S1.Location = new System.Drawing.Point(82, 139);
             this.Button_Connect_S1.Name = "Button_Connect_S1";
             this.Button_Connect_S1.Size = new System.Drawing.Size(75, 23);
-            this.Button_Connect_S1.TabIndex = 2;
+            this.Button_Connect_S1.TabIndex = 6;
             this.Button_Connect_S1.Text = "Connect";
             this.Button_Connect_S1.UseVisualStyleBackColor = true;
             this.Button_Connect_S1.Click += new System.EventHandler(this.Button_Connect_S1_Click);
@@ -112,8 +114,7 @@ namespace MoveHardware
             this.textBox_Password_S1.Name = "textBox_Password_S1";
             this.textBox_Password_S1.PasswordChar = '*';
             this.textBox_Password_S1.Size = new System.Drawing.Size(108, 20);
-            this.textBox_Password_S1.TabIndex = 1;
-            this.textBox_Password_S1.Text = "Milestone1$";
+            this.textBox_Password_S1.TabIndex = 5;
             // 
             // label4
             // 
@@ -130,7 +131,6 @@ namespace MoveHardware
             this.textBox_Domain__S1.Name = "textBox_Domain__S1";
             this.textBox_Domain__S1.Size = new System.Drawing.Size(108, 20);
             this.textBox_Domain__S1.TabIndex = 1;
-            this.textBox_Domain__S1.Text = "MEX-LAB";
             // 
             // label3
             // 
@@ -146,8 +146,7 @@ namespace MoveHardware
             this.textBox_User_S1.Location = new System.Drawing.Point(66, 71);
             this.textBox_User_S1.Name = "textBox_User_S1";
             this.textBox_User_S1.Size = new System.Drawing.Size(108, 20);
-            this.textBox_User_S1.TabIndex = 1;
-            this.textBox_User_S1.Text = "SGIU";
+            this.textBox_User_S1.TabIndex = 4;
             // 
             // label2
             // 
@@ -158,13 +157,12 @@ namespace MoveHardware
             this.label2.TabIndex = 0;
             this.label2.Text = "User";
             // 
-            // textBox_S1
+            // textBox_Address_S1
             // 
-            this.textBox_S1.Location = new System.Drawing.Point(66, 19);
-            this.textBox_S1.Name = "textBox_S1";
-            this.textBox_S1.Size = new System.Drawing.Size(108, 20);
-            this.textBox_S1.TabIndex = 1;
-            this.textBox_S1.Text = "10.1.0.192";
+            this.textBox_Address_S1.Location = new System.Drawing.Point(66, 19);
+            this.textBox_Address_S1.Name = "textBox_Address_S1";
+            this.textBox_Address_S1.Size = new System.Drawing.Size(108, 20);
+            this.textBox_Address_S1.TabIndex = 0;
             // 
             // label1
             // 
@@ -183,6 +181,7 @@ namespace MoveHardware
             this.treeView_S1.Name = "treeView_S1";
             this.treeView_S1.Size = new System.Drawing.Size(336, 519);
             this.treeView_S1.TabIndex = 1;
+            this.treeView_S1.TabStop = false;
             this.treeView_S1.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.TreeView_S1_AfterCheck);
             this.treeView_S1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.treeView_S1_KeyDown);
             // 
@@ -221,7 +220,7 @@ namespace MoveHardware
             this.Button_Connect_S2.Location = new System.Drawing.Point(82, 139);
             this.Button_Connect_S2.Name = "Button_Connect_S2";
             this.Button_Connect_S2.Size = new System.Drawing.Size(75, 23);
-            this.Button_Connect_S2.TabIndex = 2;
+            this.Button_Connect_S2.TabIndex = 11;
             this.Button_Connect_S2.Text = "Connect";
             this.Button_Connect_S2.UseVisualStyleBackColor = true;
             this.Button_Connect_S2.Click += new System.EventHandler(this.Button_Connect_S2_Click);
@@ -232,8 +231,7 @@ namespace MoveHardware
             this.textBox_Password_S2.Name = "textBox_Password_S2";
             this.textBox_Password_S2.PasswordChar = '*';
             this.textBox_Password_S2.Size = new System.Drawing.Size(108, 20);
-            this.textBox_Password_S2.TabIndex = 1;
-            this.textBox_Password_S2.Text = "Milestone1$";
+            this.textBox_Password_S2.TabIndex = 10;
             // 
             // label6
             // 
@@ -249,8 +247,7 @@ namespace MoveHardware
             this.textBox_Domain_S2.Location = new System.Drawing.Point(66, 45);
             this.textBox_Domain_S2.Name = "textBox_Domain_S2";
             this.textBox_Domain_S2.Size = new System.Drawing.Size(108, 20);
-            this.textBox_Domain_S2.TabIndex = 1;
-            this.textBox_Domain_S2.Text = "WIN-M8NK7J8JKDK";
+            this.textBox_Domain_S2.TabIndex = 8;
             // 
             // label7
             // 
@@ -266,8 +263,7 @@ namespace MoveHardware
             this.textBox_User_S2.Location = new System.Drawing.Point(66, 71);
             this.textBox_User_S2.Name = "textBox_User_S2";
             this.textBox_User_S2.Size = new System.Drawing.Size(108, 20);
-            this.textBox_User_S2.TabIndex = 1;
-            this.textBox_User_S2.Text = "Administrator";
+            this.textBox_User_S2.TabIndex = 9;
             // 
             // label8
             // 
@@ -283,8 +279,7 @@ namespace MoveHardware
             this.textBox_Address_S2.Location = new System.Drawing.Point(66, 19);
             this.textBox_Address_S2.Name = "textBox_Address_S2";
             this.textBox_Address_S2.Size = new System.Drawing.Size(108, 20);
-            this.textBox_Address_S2.TabIndex = 1;
-            this.textBox_Address_S2.Text = "172.24.242.242";
+            this.textBox_Address_S2.TabIndex = 7;
             // 
             // label9
             // 
@@ -302,68 +297,8 @@ namespace MoveHardware
             this.treeView_S2.Name = "treeView_S2";
             this.treeView_S2.Size = new System.Drawing.Size(336, 519);
             this.treeView_S2.TabIndex = 1;
+            this.treeView_S2.TabStop = false;
             this.treeView_S2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.treeView_S2_KeyDown);
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(1141, 77);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(147, 75);
-            this.button1.TabIndex = 2;
-            this.button1.Text = "Move Hardware";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.Button_Move_Selection_Click);
-            // 
-            // numericUpDown_MaxDegreeOfParallelism
-            // 
-            this.numericUpDown_MaxDegreeOfParallelism.Location = new System.Drawing.Point(1180, 480);
-            this.numericUpDown_MaxDegreeOfParallelism.Name = "numericUpDown_MaxDegreeOfParallelism";
-            this.numericUpDown_MaxDegreeOfParallelism.Size = new System.Drawing.Size(81, 20);
-            this.numericUpDown_MaxDegreeOfParallelism.TabIndex = 4;
-            this.numericUpDown_MaxDegreeOfParallelism.Value = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(1165, 464);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(108, 13);
-            this.label5.TabIndex = 5;
-            this.label5.Text = "Degree Of Parallelism";
-            // 
-            // button_MoveRoles
-            // 
-            this.button_MoveRoles.Location = new System.Drawing.Point(1141, 320);
-            this.button_MoveRoles.Name = "button_MoveRoles";
-            this.button_MoveRoles.Size = new System.Drawing.Size(147, 75);
-            this.button_MoveRoles.TabIndex = 6;
-            this.button_MoveRoles.Text = "Move Roles";
-            this.button_MoveRoles.UseVisualStyleBackColor = true;
-            this.button_MoveRoles.Click += new System.EventHandler(this.Button_MoveRoles_Click);
-            // 
-            // button_MoveBasicUsers
-            // 
-            this.button_MoveBasicUsers.Location = new System.Drawing.Point(1141, 239);
-            this.button_MoveBasicUsers.Name = "button_MoveBasicUsers";
-            this.button_MoveBasicUsers.Size = new System.Drawing.Size(147, 75);
-            this.button_MoveBasicUsers.TabIndex = 7;
-            this.button_MoveBasicUsers.Text = "Move Basic Users";
-            this.button_MoveBasicUsers.UseVisualStyleBackColor = true;
-            this.button_MoveBasicUsers.Click += new System.EventHandler(this.button_MoveBasicUsers_Click);
-            // 
-            // button_MoveGroups
-            // 
-            this.button_MoveGroups.Location = new System.Drawing.Point(1141, 158);
-            this.button_MoveGroups.Name = "button_MoveGroups";
-            this.button_MoveGroups.Size = new System.Drawing.Size(147, 75);
-            this.button_MoveGroups.TabIndex = 9;
-            this.button_MoveGroups.Text = "Move Groups";
-            this.button_MoveGroups.UseVisualStyleBackColor = true;
-            this.button_MoveGroups.Click += new System.EventHandler(this.button_MoveGroups_Click);
             // 
             // textBox_Console
             // 
@@ -372,6 +307,7 @@ namespace MoveHardware
             this.textBox_Console.Name = "textBox_Console";
             this.textBox_Console.Size = new System.Drawing.Size(1313, 243);
             this.textBox_Console.TabIndex = 10;
+            this.textBox_Console.TabStop = false;
             this.textBox_Console.Text = "";
             // 
             // button_SaveLogs
@@ -384,10 +320,91 @@ namespace MoveHardware
             this.button_SaveLogs.Margin = new System.Windows.Forms.Padding(0);
             this.button_SaveLogs.Name = "button_SaveLogs";
             this.button_SaveLogs.Size = new System.Drawing.Size(75, 23);
-            this.button_SaveLogs.TabIndex = 11;
+            this.button_SaveLogs.TabIndex = 17;
             this.button_SaveLogs.Text = "SaveLog";
             this.button_SaveLogs.UseVisualStyleBackColor = false;
             this.button_SaveLogs.Click += new System.EventHandler(this.button_SaveLogs_Click);
+            // 
+            // groupBox3
+            // 
+            this.groupBox3.Controls.Add(this.button_MoveGroups);
+            this.groupBox3.Controls.Add(this.button_MoveBasicUsers);
+            this.groupBox3.Controls.Add(this.button_MoveRoles);
+            this.groupBox3.Controls.Add(this.label5);
+            this.groupBox3.Controls.Add(this.numericUpDown_MaxDegreeOfParallelism);
+            this.groupBox3.Controls.Add(this.button1);
+            this.groupBox3.ForeColor = System.Drawing.Color.White;
+            this.groupBox3.Location = new System.Drawing.Point(1107, 12);
+            this.groupBox3.Name = "groupBox3";
+            this.groupBox3.Size = new System.Drawing.Size(200, 519);
+            this.groupBox3.TabIndex = 18;
+            this.groupBox3.TabStop = false;
+            this.groupBox3.Text = "Commands";
+            // 
+            // button_MoveGroups
+            // 
+            this.button_MoveGroups.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button_MoveGroups.Location = new System.Drawing.Point(27, 109);
+            this.button_MoveGroups.Name = "button_MoveGroups";
+            this.button_MoveGroups.Size = new System.Drawing.Size(147, 75);
+            this.button_MoveGroups.TabIndex = 19;
+            this.button_MoveGroups.Text = "Move Groups";
+            this.button_MoveGroups.UseVisualStyleBackColor = true;
+            this.button_MoveGroups.Click += new System.EventHandler(this.button_MoveGroups_Click);
+            // 
+            // button_MoveBasicUsers
+            // 
+            this.button_MoveBasicUsers.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button_MoveBasicUsers.Location = new System.Drawing.Point(27, 190);
+            this.button_MoveBasicUsers.Name = "button_MoveBasicUsers";
+            this.button_MoveBasicUsers.Size = new System.Drawing.Size(147, 75);
+            this.button_MoveBasicUsers.TabIndex = 20;
+            this.button_MoveBasicUsers.Text = "Move Basic Users";
+            this.button_MoveBasicUsers.UseVisualStyleBackColor = true;
+            this.button_MoveBasicUsers.Click += new System.EventHandler(this.button_MoveBasicUsers_Click);
+            // 
+            // button_MoveRoles
+            // 
+            this.button_MoveRoles.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button_MoveRoles.Location = new System.Drawing.Point(27, 271);
+            this.button_MoveRoles.Name = "button_MoveRoles";
+            this.button_MoveRoles.Size = new System.Drawing.Size(147, 75);
+            this.button_MoveRoles.TabIndex = 21;
+            this.button_MoveRoles.Text = "Move Roles";
+            this.button_MoveRoles.UseVisualStyleBackColor = true;
+            this.button_MoveRoles.Click += new System.EventHandler(this.Button_MoveRoles_Click);
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(51, 415);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(108, 13);
+            this.label5.TabIndex = 17;
+            this.label5.Text = "Degree Of Parallelism";
+            // 
+            // numericUpDown_MaxDegreeOfParallelism
+            // 
+            this.numericUpDown_MaxDegreeOfParallelism.Location = new System.Drawing.Point(66, 431);
+            this.numericUpDown_MaxDegreeOfParallelism.Name = "numericUpDown_MaxDegreeOfParallelism";
+            this.numericUpDown_MaxDegreeOfParallelism.Size = new System.Drawing.Size(81, 20);
+            this.numericUpDown_MaxDegreeOfParallelism.TabIndex = 22;
+            this.numericUpDown_MaxDegreeOfParallelism.Value = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            // 
+            // button1
+            // 
+            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button1.Location = new System.Drawing.Point(27, 28);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(147, 75);
+            this.button1.TabIndex = 18;
+            this.button1.Text = "Move Hardware";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.Button_Move_Selection_Click);
             // 
             // Main
             // 
@@ -395,14 +412,9 @@ namespace MoveHardware
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.ClientSize = new System.Drawing.Size(1333, 787);
+            this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.button_SaveLogs);
             this.Controls.Add(this.textBox_Console);
-            this.Controls.Add(this.button_MoveGroups);
-            this.Controls.Add(this.button_MoveBasicUsers);
-            this.Controls.Add(this.button_MoveRoles);
-            this.Controls.Add(this.label5);
-            this.Controls.Add(this.numericUpDown_MaxDegreeOfParallelism);
-            this.Controls.Add(this.button1);
             this.Controls.Add(this.treeView_S2);
             this.Controls.Add(this.treeView_S1);
             this.Controls.Add(this.groupBox2);
@@ -413,9 +425,10 @@ namespace MoveHardware
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
+            this.groupBox3.ResumeLayout(false);
+            this.groupBox3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown_MaxDegreeOfParallelism)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -430,7 +443,7 @@ namespace MoveHardware
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox textBox_User_S1;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.TextBox textBox_S1;
+        private System.Windows.Forms.TextBox textBox_Address_S1;
         private System.Windows.Forms.TreeView treeView_S1;
         private System.Windows.Forms.Label toolStripStatusLabel_S1;
         private System.Windows.Forms.GroupBox groupBox2;
@@ -445,14 +458,15 @@ namespace MoveHardware
         private System.Windows.Forms.TextBox textBox_Address_S2;
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.TreeView treeView_S2;
-        private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.NumericUpDown numericUpDown_MaxDegreeOfParallelism;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Button button_MoveRoles;
-        private System.Windows.Forms.Button button_MoveBasicUsers;
-        private System.Windows.Forms.Button button_MoveGroups;
         private System.Windows.Forms.RichTextBox textBox_Console;
         private System.Windows.Forms.Button button_SaveLogs;
+        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.Button button_MoveGroups;
+        private System.Windows.Forms.Button button_MoveBasicUsers;
+        private System.Windows.Forms.Button button_MoveRoles;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.NumericUpDown numericUpDown_MaxDegreeOfParallelism;
+        private System.Windows.Forms.Button button1;
     }
 }
 
