@@ -60,6 +60,7 @@ namespace MoveHardware
             this.button_MoveBasicUsers = new System.Windows.Forms.Button();
             this.button_MoveGroups = new System.Windows.Forms.Button();
             this.textBox_Console = new System.Windows.Forms.RichTextBox();
+            this.button_SaveLogs = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown_MaxDegreeOfParallelism)).BeginInit();
@@ -305,7 +306,7 @@ namespace MoveHardware
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(1151, 83);
+            this.button1.Location = new System.Drawing.Point(1141, 77);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(147, 75);
             this.button1.TabIndex = 2;
@@ -315,12 +316,12 @@ namespace MoveHardware
             // 
             // numericUpDown_MaxDegreeOfParallelism
             // 
-            this.numericUpDown_MaxDegreeOfParallelism.Location = new System.Drawing.Point(1236, 29);
+            this.numericUpDown_MaxDegreeOfParallelism.Location = new System.Drawing.Point(1180, 480);
             this.numericUpDown_MaxDegreeOfParallelism.Name = "numericUpDown_MaxDegreeOfParallelism";
             this.numericUpDown_MaxDegreeOfParallelism.Size = new System.Drawing.Size(81, 20);
             this.numericUpDown_MaxDegreeOfParallelism.TabIndex = 4;
             this.numericUpDown_MaxDegreeOfParallelism.Value = new decimal(new int[] {
-            5,
+            10,
             0,
             0,
             0});
@@ -328,7 +329,7 @@ namespace MoveHardware
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(1119, 31);
+            this.label5.Location = new System.Drawing.Point(1165, 464);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(108, 13);
             this.label5.TabIndex = 5;
@@ -336,7 +337,7 @@ namespace MoveHardware
             // 
             // button_MoveRoles
             // 
-            this.button_MoveRoles.Location = new System.Drawing.Point(1151, 326);
+            this.button_MoveRoles.Location = new System.Drawing.Point(1141, 320);
             this.button_MoveRoles.Name = "button_MoveRoles";
             this.button_MoveRoles.Size = new System.Drawing.Size(147, 75);
             this.button_MoveRoles.TabIndex = 6;
@@ -346,7 +347,7 @@ namespace MoveHardware
             // 
             // button_MoveBasicUsers
             // 
-            this.button_MoveBasicUsers.Location = new System.Drawing.Point(1151, 245);
+            this.button_MoveBasicUsers.Location = new System.Drawing.Point(1141, 239);
             this.button_MoveBasicUsers.Name = "button_MoveBasicUsers";
             this.button_MoveBasicUsers.Size = new System.Drawing.Size(147, 75);
             this.button_MoveBasicUsers.TabIndex = 7;
@@ -356,7 +357,7 @@ namespace MoveHardware
             // 
             // button_MoveGroups
             // 
-            this.button_MoveGroups.Location = new System.Drawing.Point(1151, 164);
+            this.button_MoveGroups.Location = new System.Drawing.Point(1141, 158);
             this.button_MoveGroups.Name = "button_MoveGroups";
             this.button_MoveGroups.Size = new System.Drawing.Size(147, 75);
             this.button_MoveGroups.TabIndex = 9;
@@ -373,12 +374,28 @@ namespace MoveHardware
             this.textBox_Console.TabIndex = 10;
             this.textBox_Console.Text = "";
             // 
+            // button_SaveLogs
+            // 
+            this.button_SaveLogs.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.button_SaveLogs.BackColor = System.Drawing.SystemColors.Desktop;
+            this.button_SaveLogs.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button_SaveLogs.ForeColor = System.Drawing.Color.DimGray;
+            this.button_SaveLogs.Location = new System.Drawing.Point(1242, 749);
+            this.button_SaveLogs.Margin = new System.Windows.Forms.Padding(0);
+            this.button_SaveLogs.Name = "button_SaveLogs";
+            this.button_SaveLogs.Size = new System.Drawing.Size(75, 23);
+            this.button_SaveLogs.TabIndex = 11;
+            this.button_SaveLogs.Text = "SaveLog";
+            this.button_SaveLogs.UseVisualStyleBackColor = false;
+            this.button_SaveLogs.Click += new System.EventHandler(this.button_SaveLogs_Click);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.ClientSize = new System.Drawing.Size(1343, 792);
+            this.ClientSize = new System.Drawing.Size(1333, 787);
+            this.Controls.Add(this.button_SaveLogs);
             this.Controls.Add(this.textBox_Console);
             this.Controls.Add(this.button_MoveGroups);
             this.Controls.Add(this.button_MoveBasicUsers);
@@ -435,6 +452,7 @@ namespace MoveHardware
         private System.Windows.Forms.Button button_MoveBasicUsers;
         private System.Windows.Forms.Button button_MoveGroups;
         private System.Windows.Forms.RichTextBox textBox_Console;
+        private System.Windows.Forms.Button button_SaveLogs;
     }
 }
 
