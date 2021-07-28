@@ -59,7 +59,7 @@ namespace MoveHardware
 
             numericUpDown_MaxDegreeOfParallelism.Value = 10;
 
-            /*
+
             // FAST DEBUG
             textBox_Address_S1.Text = "10.1.0.192";
             textBox_Domain__S1.Text = "MEX-LAB";
@@ -67,11 +67,12 @@ namespace MoveHardware
             textBox_Password_S1.Text = "Milestone1$";
 
 
-            textBox_Address_S2.Text = "172.19.190.152";
+            textBox_Address_S2.Text = "172.31.229.166";
             textBox_Domain_S2.Text = ".";
             textBox_User_S2.Text = "Administrator";
             textBox_Password_S2.Text = "Milestone1$";
-            
+
+            /*
             //Button_Connect_S1_Click(null, null); 
             //Button_Connect_S2_Click(null, null); 
             */
@@ -265,7 +266,8 @@ namespace MoveHardware
         private TreeNode[] AddChildren(string node, ConfigApiClient _configApiClient)
         {
             List<TreeNode> children = new List<TreeNode>();                                         //  Create an empty list of TreeNode 
-            Parallel.ForEach(_configApiClient.GetChildItems(node), child =>
+            //Parallel.ForEach(_configApiClient.GetChildItems(node), child =>
+            foreach (var child in _configApiClient.GetChildItems(node))
             {
 
                 if (_showItemsType.Contains(child.ItemType))                                        //  Apply Filter 
@@ -281,7 +283,9 @@ namespace MoveHardware
                     //  Add node to childen list 
                     tn.Nodes.AddRange(AddChildren(child.Path, _configApiClient));                   //  Recursive call with the child as parent 
                 }
-            });
+            }
+
+            //);
             return children.ToArray();                                                              // Return the children list
         }
 
@@ -449,61 +453,71 @@ namespace MoveHardware
             HardwareProperties hardwareProperties = GetHardwareProperties(_src, _configApiClient1);                                   // Get src hardware basic properties 
 
             ConfigurationItem[] hardwareDriverFolder = _configApiClient2.GetChildItems(_dest_recordingServer.Path + "/HardwareDriverFolder");                   // Get dest RS drivers
-            var hardwarePath = (from item in hardwareDriverFolder where Array.Find(item.Properties, ele => ele.Key == "Number").Value == hardwareProperties.DriverNumber select item.Path).First();    // Find the driver on the dest server 
 
-            WriteInConsole(hardwareProperties.Name + ": Adding Hardware. (" + v + "/" + count + ")", LogType.message);
-
-            ConfigurationItem addHarwareInfo = _configApiClient2.InvokeMethod(_dest_recordingServer, "AddHardware");            // Invoke Addhardware method on dest server 
-
-            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "HardwareAddress").Value = hardwareProperties.Address;        // set harware address
-            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "UserName").Value = hardwareProperties.UserName;              // set user 
-            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "Password").Value = hardwareProperties.Password;              // set password
-            Array.Find(addHarwareInfo.Properties, ele => ele.Key == "HardwareDriverPath").Value = hardwarePath;                 // set driver 
-
-            ConfigurationItem addHarwareResult = _configApiClient2.InvokeMethod(addHarwareInfo, "AddHardware");   // Star AddHarware method 
-
-            String taskPath = Array.Find(addHarwareResult.Properties, ele => ele.Key == "Path").Value;      // Get thask path 
-
-
-            ConfigurationItem status = _configApiClient2.GetItem(taskPath);       // Get the task status 
-
-            String _state = Array.Find(status.Properties, ele => ele.Key == "State").Value; // Get state
-
-            while (!(_state == "Success" || _state == "Error"))
+            try
             {
-                status = _configApiClient2.GetItem(taskPath);                   // Get the task status 
-                Thread.Sleep(300);                                              // <- Wait 300ms
-                _state = Array.Find(status.Properties, ele => ele.Key == "State").Value; // Get the new state
-            }
+                var hardwarePath = (from item in hardwareDriverFolder where Array.Find(item.Properties, ele => ele.Key == "Number").Value == hardwareProperties.DriverNumber select item.Path).First();    // Find the driver on the dest server 
 
-            if (_state == "Error")
-            {
-                WriteInConsole("Error Adding Hardware (" + v + "/" + count + ") " + hardwareProperties.Name + ". " + Array.Find(status.Properties, ele => ele.Key == "ErrorText").Value, LogType.error);
-            }
+                WriteInConsole(hardwareProperties.Name + ": Adding Hardware. (" + v + "/" + count + ")", LogType.message);
 
-            else
-            {
+                ConfigurationItem addHarwareInfo = _configApiClient2.InvokeMethod(_dest_recordingServer, "AddHardware");            // Invoke Addhardware method on dest server 
+
+                Array.Find(addHarwareInfo.Properties, ele => ele.Key == "HardwareAddress").Value = hardwareProperties.Address;        // set harware address
+                Array.Find(addHarwareInfo.Properties, ele => ele.Key == "UserName").Value = hardwareProperties.UserName;              // set user 
+                Array.Find(addHarwareInfo.Properties, ele => ele.Key == "Password").Value = hardwareProperties.Password;              // set password
+                Array.Find(addHarwareInfo.Properties, ele => ele.Key == "HardwareDriverPath").Value = hardwarePath;                 // set driver 
+
+                ConfigurationItem addHarwareResult = _configApiClient2.InvokeMethod(addHarwareInfo, "AddHardware");   // Star AddHarware method 
+
+                String taskPath = Array.Find(addHarwareResult.Properties, ele => ele.Key == "Path").Value;      // Get thask path 
+
+
+                ConfigurationItem status = _configApiClient2.GetItem(taskPath);       // Get the task status 
+
+                String _state = Array.Find(status.Properties, ele => ele.Key == "State").Value; // Get state
+
+                while (!(_state == "Success" || _state == "Error"))
                 {
-                    WriteInConsole(hardwareProperties.Name + ": Getting Hardware Configurations.", LogType.debug);
-                    FillAllChilds(_src, _configApiClient1);                                             // Fill all source childs 
-                    ConfigurationItem _dest = _configApiClient2.GetItem(status.Properties[1].Value);    // Get the added Hardware
-
-                    WriteInConsole(hardwareProperties.Name + ": Adding Streams .", LogType.info);
-
-                    MatchStreams(_src, _dest);                                                          // Add streams if necesary 
-
-                    WriteInConsole(hardwareProperties.Name + ": Preparing destination.", LogType.info);
-                    FillAllChilds(_dest, _configApiClient2);                                            // Fill dest childs. 
-
-                    WriteInConsole(hardwareProperties.Name + ": Coping configuration.", LogType.info);
-
-                    CopyConfigurationItem(_src, _dest);                                                 // Copy configuration from src to dest
-                    WriteInConsole(hardwareProperties.Name + ": Saving configuration.", LogType.info);
-                    SetAllChilds(_dest, _configApiClient2);                                             // Save the configuration to dest server
-                    WriteInConsole(hardwareProperties.Name + ": Success. (" + v + " / " + count + ")", LogType.message);
+                    status = _configApiClient2.GetItem(taskPath);                   // Get the task status 
+                    Thread.Sleep(300);                                              // <- Wait 300ms
+                    _state = Array.Find(status.Properties, ele => ele.Key == "State").Value; // Get the new state
                 }
 
+                if (_state == "Error")
+                {
+                    WriteInConsole("Error Adding Hardware (" + v + "/" + count + ") " + hardwareProperties.Name + ". " + Array.Find(status.Properties, ele => ele.Key == "ErrorText").Value, LogType.error);
+                }
 
+                else
+                {
+                    {
+                        WriteInConsole(hardwareProperties.Name + ": Getting Hardware Configurations.", LogType.debug);
+                        FillAllChilds(_src, _configApiClient1);                                             // Fill all source childs 
+                        ConfigurationItem _dest = _configApiClient2.GetItem(status.Properties[1].Value);    // Get the added Hardware
+
+                        WriteInConsole(hardwareProperties.Name + ": Adding Streams .", LogType.info);
+
+                        MatchStreams(_src, _dest);                                                          // Add streams if necesary 
+
+                        WriteInConsole(hardwareProperties.Name + ": Preparing destination.", LogType.info);
+                        FillAllChilds(_dest, _configApiClient2);                                            // Fill dest childs. 
+
+                        WriteInConsole(hardwareProperties.Name + ": Coping configuration.", LogType.info);
+
+                        CopyConfigurationItem(_src, _dest);                                                 // Copy configuration from src to dest
+                        WriteInConsole(hardwareProperties.Name + ": Saving configuration.", LogType.info);
+                        SetAllChilds(_dest, _configApiClient2);                                             // Save the configuration to dest server
+                        WriteInConsole(hardwareProperties.Name + ": Success. (" + v + " / " + count + ")", LogType.message);
+                    }
+
+
+                }
+
+            }
+            catch (Exception)
+            {
+
+                WriteInConsole("Error Adding Hardware (" + v + "/" + count + ") " + "De driver Pack must be the same on both servers ", LogType.error);
             }
         }
 
@@ -559,21 +573,32 @@ namespace MoveHardware
                 dest.EnableProperty.Enabled = src.EnableProperty.Enabled;                       // Copy the Enabled status
             if (src.Properties != null)                                                         // If properties is not null 
             {
-                for (int i = 0; i < src.Properties.Length; i++)                                 // Iterate over the property array 
+                foreach (Property srcProperty in src.Properties)
                 {
-                    if (src.Properties[i].IsSettable)                                           // If the properties is settable
+
+                    if (srcProperty.IsSettable)                                           // If the properties is settable
                     {
-                        dest.Properties[i].Value = src.Properties[i].Value;                     // Copy the value 
+                        Property _destProperty = Array.Find(dest.Properties, ele => ele.Key == srcProperty.Key);
+                        if (_destProperty != null)
+                        {
+                            _destProperty.Value = srcProperty.Value;                     // Copy the value 
+                        }
                     }
                 }
             }
 
             if (src.Children != null)                                                           // Is the ConfigurationItem has children 
             {
-                for (int i = 0; i < src.Children.Length; i++)                                   // Iterate over the chils
+
+                foreach (ConfigurationItem _srcChild in src.Children)
                 {
-                    CopyConfigurationItem(src.Children[i], dest.Children[i]);                   // Recursive call
+                    ConfigurationItem _destChild = Array.Find(dest.Children, ele => ele.ItemType == _srcChild.ItemType);
+                    if (_destChild != null)
+                    {
+                        CopyConfigurationItem(_srcChild, _destChild);
+                    }
                 }
+
             }
         }
 
