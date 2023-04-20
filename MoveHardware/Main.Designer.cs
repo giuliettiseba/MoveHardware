@@ -30,11 +30,14 @@ namespace MoveHardware
         private void InitializeComponent()
         {
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.SecureConnection_S1 = new System.Windows.Forms.CheckBox();
+            this.WindowsAuth_S1 = new System.Windows.Forms.RadioButton();
+            this.WindowsUser_S1 = new System.Windows.Forms.RadioButton();
             this.toolStripStatusLabel_S1 = new System.Windows.Forms.Label();
             this.Button_Connect_S1 = new System.Windows.Forms.Button();
             this.textBox_Password_S1 = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
-            this.textBox_Domain__S1 = new System.Windows.Forms.TextBox();
+            this.textBox_Domain_S1 = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.textBox_User_S1 = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
@@ -42,9 +45,12 @@ namespace MoveHardware
             this.label1 = new System.Windows.Forms.Label();
             this.treeView_S1 = new System.Windows.Forms.TreeView();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.SecureConnection_S2 = new System.Windows.Forms.CheckBox();
             this.toolStripStatusLabel_S2 = new System.Windows.Forms.Label();
             this.Button_Connect_S2 = new System.Windows.Forms.Button();
+            this.WindowsAuth_S2 = new System.Windows.Forms.RadioButton();
             this.textBox_Password_S2 = new System.Windows.Forms.TextBox();
+            this.WindowsUser_S2 = new System.Windows.Forms.RadioButton();
             this.label6 = new System.Windows.Forms.Label();
             this.textBox_Domain_S2 = new System.Windows.Forms.TextBox();
             this.label7 = new System.Windows.Forms.Label();
@@ -70,11 +76,14 @@ namespace MoveHardware
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.SecureConnection_S1);
+            this.groupBox1.Controls.Add(this.WindowsAuth_S1);
+            this.groupBox1.Controls.Add(this.WindowsUser_S1);
             this.groupBox1.Controls.Add(this.toolStripStatusLabel_S1);
             this.groupBox1.Controls.Add(this.Button_Connect_S1);
             this.groupBox1.Controls.Add(this.textBox_Password_S1);
             this.groupBox1.Controls.Add(this.label4);
-            this.groupBox1.Controls.Add(this.textBox_Domain__S1);
+            this.groupBox1.Controls.Add(this.textBox_Domain_S1);
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.textBox_User_S1);
             this.groupBox1.Controls.Add(this.label2);
@@ -83,15 +92,52 @@ namespace MoveHardware
             this.groupBox1.ForeColor = System.Drawing.Color.White;
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(183, 172);
+            this.groupBox1.Size = new System.Drawing.Size(183, 238);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Source ";
             // 
+            // SecureConnection_S1
+            // 
+            this.SecureConnection_S1.AutoSize = true;
+            this.SecureConnection_S1.Checked = true;
+            this.SecureConnection_S1.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.SecureConnection_S1.Location = new System.Drawing.Point(46, 183);
+            this.SecureConnection_S1.Name = "SecureConnection_S1";
+            this.SecureConnection_S1.Size = new System.Drawing.Size(84, 17);
+            this.SecureConnection_S1.TabIndex = 10;
+            this.SecureConnection_S1.Text = "Secure Only";
+            this.SecureConnection_S1.UseVisualStyleBackColor = true;
+            // 
+            // WindowsAuth_S1
+            // 
+            this.WindowsAuth_S1.AutoSize = true;
+            this.WindowsAuth_S1.Checked = true;
+            this.WindowsAuth_S1.Location = new System.Drawing.Point(46, 143);
+            this.WindowsAuth_S1.Name = "WindowsAuth_S1";
+            this.WindowsAuth_S1.Size = new System.Drawing.Size(94, 17);
+            this.WindowsAuth_S1.TabIndex = 8;
+            this.WindowsAuth_S1.TabStop = true;
+            this.WindowsAuth_S1.Tag = "WU";
+            this.WindowsAuth_S1.Text = "Windows User";
+            this.WindowsAuth_S1.UseVisualStyleBackColor = true;
+            // 
+            // WindowsUser_S1
+            // 
+            this.WindowsUser_S1.AutoSize = true;
+            this.WindowsUser_S1.Location = new System.Drawing.Point(46, 123);
+            this.WindowsUser_S1.Name = "WindowsUser_S1";
+            this.WindowsUser_S1.Size = new System.Drawing.Size(84, 17);
+            this.WindowsUser_S1.TabIndex = 7;
+            this.WindowsUser_S1.Tag = "CU";
+            this.WindowsUser_S1.Text = "Current User";
+            this.WindowsUser_S1.UseVisualStyleBackColor = true;
+            this.WindowsUser_S1.CheckedChanged += new System.EventHandler(this.S1_CheckedChanged);
+            // 
             // toolStripStatusLabel_S1
             // 
             this.toolStripStatusLabel_S1.AutoSize = true;
-            this.toolStripStatusLabel_S1.Location = new System.Drawing.Point(19, 144);
+            this.toolStripStatusLabel_S1.Location = new System.Drawing.Point(6, 211);
             this.toolStripStatusLabel_S1.Name = "toolStripStatusLabel_S1";
             this.toolStripStatusLabel_S1.Size = new System.Drawing.Size(35, 13);
             this.toolStripStatusLabel_S1.TabIndex = 2;
@@ -100,7 +146,7 @@ namespace MoveHardware
             // Button_Connect_S1
             // 
             this.Button_Connect_S1.ForeColor = System.Drawing.Color.Black;
-            this.Button_Connect_S1.Location = new System.Drawing.Point(82, 139);
+            this.Button_Connect_S1.Location = new System.Drawing.Point(99, 206);
             this.Button_Connect_S1.Name = "Button_Connect_S1";
             this.Button_Connect_S1.Size = new System.Drawing.Size(75, 23);
             this.Button_Connect_S1.TabIndex = 6;
@@ -125,12 +171,12 @@ namespace MoveHardware
             this.label4.TabIndex = 0;
             this.label4.Text = "Domain";
             // 
-            // textBox_Domain__S1
+            // textBox_Domain_S1
             // 
-            this.textBox_Domain__S1.Location = new System.Drawing.Point(66, 45);
-            this.textBox_Domain__S1.Name = "textBox_Domain__S1";
-            this.textBox_Domain__S1.Size = new System.Drawing.Size(108, 20);
-            this.textBox_Domain__S1.TabIndex = 1;
+            this.textBox_Domain_S1.Location = new System.Drawing.Point(66, 45);
+            this.textBox_Domain_S1.Name = "textBox_Domain_S1";
+            this.textBox_Domain_S1.Size = new System.Drawing.Size(108, 20);
+            this.textBox_Domain_S1.TabIndex = 1;
             // 
             // label3
             // 
@@ -187,9 +233,12 @@ namespace MoveHardware
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.SecureConnection_S2);
             this.groupBox2.Controls.Add(this.toolStripStatusLabel_S2);
             this.groupBox2.Controls.Add(this.Button_Connect_S2);
+            this.groupBox2.Controls.Add(this.WindowsAuth_S2);
             this.groupBox2.Controls.Add(this.textBox_Password_S2);
+            this.groupBox2.Controls.Add(this.WindowsUser_S2);
             this.groupBox2.Controls.Add(this.label6);
             this.groupBox2.Controls.Add(this.textBox_Domain_S2);
             this.groupBox2.Controls.Add(this.label7);
@@ -200,15 +249,27 @@ namespace MoveHardware
             this.groupBox2.ForeColor = System.Drawing.Color.White;
             this.groupBox2.Location = new System.Drawing.Point(555, 12);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(183, 172);
+            this.groupBox2.Size = new System.Drawing.Size(183, 238);
             this.groupBox2.TabIndex = 0;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Destination";
             // 
+            // SecureConnection_S2
+            // 
+            this.SecureConnection_S2.AutoSize = true;
+            this.SecureConnection_S2.Checked = true;
+            this.SecureConnection_S2.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.SecureConnection_S2.Location = new System.Drawing.Point(51, 183);
+            this.SecureConnection_S2.Name = "SecureConnection_S2";
+            this.SecureConnection_S2.Size = new System.Drawing.Size(84, 17);
+            this.SecureConnection_S2.TabIndex = 10;
+            this.SecureConnection_S2.Text = "Secure Only";
+            this.SecureConnection_S2.UseVisualStyleBackColor = true;
+            // 
             // toolStripStatusLabel_S2
             // 
             this.toolStripStatusLabel_S2.AutoSize = true;
-            this.toolStripStatusLabel_S2.Location = new System.Drawing.Point(19, 144);
+            this.toolStripStatusLabel_S2.Location = new System.Drawing.Point(19, 211);
             this.toolStripStatusLabel_S2.Name = "toolStripStatusLabel_S2";
             this.toolStripStatusLabel_S2.Size = new System.Drawing.Size(35, 13);
             this.toolStripStatusLabel_S2.TabIndex = 2;
@@ -217,13 +278,24 @@ namespace MoveHardware
             // Button_Connect_S2
             // 
             this.Button_Connect_S2.ForeColor = System.Drawing.Color.Black;
-            this.Button_Connect_S2.Location = new System.Drawing.Point(82, 139);
+            this.Button_Connect_S2.Location = new System.Drawing.Point(99, 206);
             this.Button_Connect_S2.Name = "Button_Connect_S2";
             this.Button_Connect_S2.Size = new System.Drawing.Size(75, 23);
             this.Button_Connect_S2.TabIndex = 11;
             this.Button_Connect_S2.Text = "Connect";
             this.Button_Connect_S2.UseVisualStyleBackColor = true;
             this.Button_Connect_S2.Click += new System.EventHandler(this.Button_Connect_S2_Click);
+            // 
+            // WindowsAuth_S2
+            // 
+            this.WindowsAuth_S2.AutoSize = true;
+            this.WindowsAuth_S2.Location = new System.Drawing.Point(51, 143);
+            this.WindowsAuth_S2.Name = "WindowsAuth_S2";
+            this.WindowsAuth_S2.Size = new System.Drawing.Size(94, 17);
+            this.WindowsAuth_S2.TabIndex = 8;
+            this.WindowsAuth_S2.Tag = "WU";
+            this.WindowsAuth_S2.Text = "Windows User";
+            this.WindowsAuth_S2.UseVisualStyleBackColor = true;
             // 
             // textBox_Password_S2
             // 
@@ -232,6 +304,20 @@ namespace MoveHardware
             this.textBox_Password_S2.PasswordChar = '*';
             this.textBox_Password_S2.Size = new System.Drawing.Size(108, 20);
             this.textBox_Password_S2.TabIndex = 10;
+            // 
+            // WindowsUser_S2
+            // 
+            this.WindowsUser_S2.AutoSize = true;
+            this.WindowsUser_S2.Checked = true;
+            this.WindowsUser_S2.Location = new System.Drawing.Point(51, 123);
+            this.WindowsUser_S2.Name = "WindowsUser_S2";
+            this.WindowsUser_S2.Size = new System.Drawing.Size(84, 17);
+            this.WindowsUser_S2.TabIndex = 7;
+            this.WindowsUser_S2.TabStop = true;
+            this.WindowsUser_S2.Tag = "CU";
+            this.WindowsUser_S2.Text = "Current User";
+            this.WindowsUser_S2.UseVisualStyleBackColor = true;
+            this.WindowsUser_S2.CheckedChanged += new System.EventHandler(this.S2_CheckedChanged);
             // 
             // label6
             // 
@@ -439,7 +525,7 @@ namespace MoveHardware
         private System.Windows.Forms.Button Button_Connect_S1;
         private System.Windows.Forms.TextBox textBox_Password_S1;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.TextBox textBox_Domain__S1;
+        private System.Windows.Forms.TextBox textBox_Domain_S1;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox textBox_User_S1;
         private System.Windows.Forms.Label label2;
@@ -467,6 +553,12 @@ namespace MoveHardware
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.NumericUpDown numericUpDown_MaxDegreeOfParallelism;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.CheckBox SecureConnection_S1;
+        private System.Windows.Forms.RadioButton WindowsAuth_S1;
+        private System.Windows.Forms.RadioButton WindowsUser_S1;
+        private System.Windows.Forms.CheckBox SecureConnection_S2;
+        private System.Windows.Forms.RadioButton WindowsAuth_S2;
+        private System.Windows.Forms.RadioButton WindowsUser_S2;
     }
 }
 

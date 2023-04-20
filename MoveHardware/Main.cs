@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Drawing;
 using System.IO;
+using VideoOS.Platform.ConfigurationItems;
 
 namespace MoveHardware
 {
@@ -60,17 +61,17 @@ namespace MoveHardware
             numericUpDown_MaxDegreeOfParallelism.Value = 10;
 
 
-            // FAST DEBUG
-            textBox_Address_S1.Text = "10.1.0.192";
-            textBox_Domain__S1.Text = "MEX-LAB";
-            textBox_User_S1.Text = "SGIU";
-            textBox_Password_S1.Text = "Milestone1$";
+            //// FAST DEBUG
+            //textBox_Address_S1.Text = "10.1.0.192";
+            //textBox_Domain_S1.Text = "MEX-LAB";
+            //textBox_User_S1.Text = "SGIU";
+            //textBox_Password_S1.Text = "Milestone1$";
 
 
-            textBox_Address_S2.Text = "172.31.229.166";
-            textBox_Domain_S2.Text = ".";
-            textBox_User_S2.Text = "Administrator";
-            textBox_Password_S2.Text = "Milestone1$";
+            //textBox_Address_S2.Text = "172.31.229.166";
+            //textBox_Domain_S2.Text = ".";
+            //textBox_User_S2.Text = "Administrator";
+            //textBox_Password_S2.Text = "Milestone1$";
 
             /*
             //Button_Connect_S1_Click(null, null); 
@@ -83,10 +84,10 @@ namespace MoveHardware
         /// </summary>
         /// <param name="uri">Server URI</param>
         /// <param name="nc">Credentials</param>
-        private void Login(Uri uri, NetworkCredential nc, ConfigApiClient _configApiClient, Label toolStripStatusLabel, Button button_Connect)
+        private void Login(Uri uri, NetworkCredential nc, ConfigApiClient _configApiClient, Label toolStripStatusLabel, Button button_Connect, bool secureOnly)
         {
             WriteInConsole("Connecting to: " + uri + ".", LogType.message);
-            VideoOS.Platform.SDK.Environment.AddServer(false, uri, nc, true);                    // Add the server to the environment 
+            VideoOS.Platform.SDK.Environment.AddServer(secureOnly, uri, nc, true);                    // Add the server to the environment 
             try
             {
                 VideoOS.Platform.SDK.Environment.Login(uri, IntegrationId, IntegrationName, Version, ManufacturerName);     // attempt to login 
@@ -143,7 +144,10 @@ namespace MoveHardware
             }
             else
             {
-                toolStripStatusLabel.Text = "Error logging on";             // If not connected change status label
+                toolStripStatusLabel.Invoke((MethodInvoker)delegate
+                {
+                    toolStripStatusLabel.Text = "Error logging on";             // If not connected change status label
+                });
                 WriteInConsole("Connection to : " + uri + " failed.", LogType.error);
 
             }
@@ -168,14 +172,38 @@ namespace MoveHardware
             else
             {
                 Uri uri = new Uri("http://" + textBox_Address_S1.Text);                                                 // Fetch URI
-                String user = textBox_User_S1.Text;                                                             // Fetch user 
-                String pass = textBox_Password_S1.Text;                                                         // Fetch pass 
-                String domain = textBox_Domain__S1.Text;                                                        // Fetch domain 
-                NetworkCredential nc = new NetworkCredential(user, pass, domain);                               // Build credentials
+
+                NetworkCredential nc = null;
+
+                if (WindowsUser_S1.Checked)
+                {
+                    nc = CredentialCache.DefaultNetworkCredentials;
+
+                }
+                if (WindowsAuth_S1.Checked)
+                {
+                    String user = textBox_User_S1.Text;                                                             // Fetch user 
+                    String pass = textBox_Password_S1.Text;                                                         // Fetch pass 
+                    String domain = textBox_Domain_S1.Text;                                                        // Fetch domain 
+                    CredentialCache cc = VideoOS.Platform.Login.Util.BuildCredentialCache(uri,
+                                                                                          $"{textBox_Domain_S1.Text}\\{textBox_User_S1.Text}",
+                                                                                          textBox_Password_S1.Text,
+                                                                                          "Negotiate");
+                    nc = cc.GetCredential(uri, "Negotiate");
+                }
+                else
+                {
+                    CredentialCache cc = VideoOS.Platform.Login.Util.BuildCredentialCache(uri,
+                                                                                          textBox_User_S1.Text,
+                                                                                          textBox_Password_S1.Text,
+                                                                                          "Basic");
+                    nc = cc.GetCredential(uri, "Basic");
+                }
+
 
                 Task taskA = new Task(() =>
                 {
-                    Login(uri, nc, _configApiClient1, toolStripStatusLabel_S1, Button_Connect_S1);                  // Call Login method
+                    Login(uri, nc, _configApiClient1, toolStripStatusLabel_S1, Button_Connect_S1, SecureConnection_S1.Checked);                  // Call Login method
                     PopulateTreeView(_configApiClient1, treeView_S1);                                               // Show items 
                 });
                 taskA.Start();
@@ -201,14 +229,37 @@ namespace MoveHardware
                 else
                 {
                     Uri uri = new Uri("http://" + textBox_Address_S2.Text);                                         // Fetch URI
-                    String user = textBox_User_S2.Text;                                                             // Fetch user 
-                    String pass = textBox_Password_S2.Text;                                                         // Fetch pass 
-                    String domain = textBox_Domain_S2.Text;                                                         // Fetch domain 
-                    NetworkCredential nc = new NetworkCredential(user, pass, domain);                               // Build credentials
+
+
+
+                    NetworkCredential nc = null;
+
+                    if (WindowsUser_S1.Checked)
+                    {
+                        nc = CredentialCache.DefaultNetworkCredentials;
+
+                    }
+                    if (WindowsAuth_S1.Checked)
+                    {
+                        CredentialCache cc = VideoOS.Platform.Login.Util.BuildCredentialCache(uri,
+                                                                                              $"{textBox_Domain_S2.Text}\\{textBox_User_S2.Text}",
+                                                                                              textBox_Password_S2.Text,
+                                                                                              "Negotiate");
+                        nc = cc.GetCredential(uri, "Negotiate");
+                    }
+                    else
+                    {
+                        CredentialCache cc = VideoOS.Platform.Login.Util.BuildCredentialCache(uri,
+                                                                                              textBox_User_S2.Text,
+                                                                                              textBox_Password_S1.Text,
+                                                                                              "Basic");
+                        nc = cc.GetCredential(uri, "Basic");
+                    }
+
 
                     Task taskA = new Task(() =>
                     {
-                        Login(uri, nc, _configApiClient2, toolStripStatusLabel_S2, Button_Connect_S2);                  // Call Login method
+                        Login(uri, nc, _configApiClient2, toolStripStatusLabel_S2, Button_Connect_S2, SecureConnection_S2.Checked);                  // Call Login method
                     });
                     taskA.Start();
 
@@ -1461,6 +1512,53 @@ namespace MoveHardware
                 // Wait for all of the provided tasks to complete.
                 // We wait on the list of "post" tasks instead of the original tasks, otherwise there is a potential race condition where the throttlers using block is exited before some Tasks have had their "post" action completed, which references the throttler, resulting in an exception due to accessing a disposed object.
                 await Task.WhenAll(postTaskTasks.ToArray());
+            }
+        }
+
+        private void S2_CheckedChanged(object sender, EventArgs e)
+        {
+            var radioButton = sender as RadioButton;
+            if (radioButton != null)
+            {
+                if (WindowsAuth_S2.Checked)
+                {
+                    textBox_Domain_S1.Enabled = false;
+                    textBox_User_S1.Enabled = false;
+                    textBox_Password_S1.Enabled = false;
+                }
+                if (WindowsUser_S2.Checked)
+                {
+                    textBox_Domain_S1.Enabled = true;
+                    textBox_User_S1.Enabled = true;
+                    textBox_Password_S1.Enabled = true;
+                }
+            }
+
+        }
+
+        private void S1_CheckedChanged(object sender, EventArgs e)
+        {
+            var radioButton = sender as RadioButton;
+            if (radioButton != null)
+            {
+                if (WindowsAuth_S1.Checked) {
+                    textBox_Domain_S1.Enabled = false;
+                    textBox_User_S1.Enabled = false;
+                    textBox_Password_S1.Enabled = false;
+                }
+                if (WindowsUser_S1.Checked)
+                {
+                    textBox_Domain_S1.Enabled = true;
+                    textBox_User_S1.Enabled = true;
+                    textBox_Password_S1.Enabled = true;
+                }
+                    //case "BU":
+                    //    textBox_Domain_S1.Enabled = false;
+                    //    textBox_User_S1.Enabled = true;
+                    //    textBox_Password_S1.Enabled = true;
+                    //    break;
+
+                
             }
         }
     }
